@@ -1,13 +1,13 @@
 // store/slices/testimonialsSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { apiService } from "../service/api";
 
+// --- INTERFACES ---
 interface Testimonial {
   _id: string;
   name: string;
   message: string;
   rating?: number;
-  image?: string;
+  video?: string;
   position?: string;
   isVisible: boolean;
   createdAt: string;
@@ -20,15 +20,6 @@ interface TestimonialResponse {
   page: number;
   totalPages: number;
   data: Testimonial[];
-}
-
-interface TestimonialRequest {
-  name: string;
-  message: string;
-  rating?: number;
-  image?: string;
-  position?: string;
-  isVisible?: boolean;
 }
 
 interface QueryParams {
@@ -46,7 +37,6 @@ interface TestimonialsState {
   total: number;
   page: number;
   totalPages: number;
-  // Action-specific loading states
   creating: boolean;
   updating: boolean;
   deleting: boolean;
@@ -67,7 +57,15 @@ const initialState: TestimonialsState = {
   toggling: false,
 };
 
-// Async Thunks
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+// Helper function to get auth token
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// --- FETCH TESTIMONIALS (No changes needed) ---
 export const fetchTestimonials = createAsyncThunk<
   TestimonialResponse,
   QueryParams | undefined,
@@ -76,99 +74,149 @@ export const fetchTestimonials = createAsyncThunk<
   "testimonials/fetchTestimonials",
   async (params: QueryParams = {}, { rejectWithValue }) => {
     try {
-      const { page = 1, limit = 10, search = "", visible } = params;
+      const queryParams = new URLSearchParams();
+      queryParams.append("page", String(params.page || 1));
+      queryParams.append("limit", String(params.limit || 10));
+      if (params.search) queryParams.append("search", params.search);
+      if (params.visible !== undefined)
+        queryParams.append("visible", String(params.visible));
 
-      const queryParams = new URLSearchParams({
-        page: String(page),
-        limit: String(limit),
-        search,
-      });
-
-      if (visible !== undefined) queryParams.append("visible", String(visible));
-
-      const response = await apiService.get<TestimonialResponse>(
-        `/api/testimonials?${queryParams.toString()}`
+      const response = await fetch(
+        `${API_BASE_URL}/api/testimonials?${queryParams.toString()}`,
+        {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(),
+          },
+        }
       );
 
-      const safeResponse: TestimonialResponse = {
-        success: response.success ?? true,
-        total: Number(response.total ?? 0),
-        page: Number(response.page ?? 1),
-        totalPages: Number(response.totalPages ?? 1),
-        data: Array.isArray(response.data) ? response.data : [],
-      };
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
 
-      return safeResponse;
+      return await response.json();
     } catch (error: any) {
       return rejectWithValue(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Failed to fetch testimonials"
+        error?.message || "Failed to fetch testimonials"
       );
     }
   }
 );
 
-export const fetchTestimonialById = createAsyncThunk(
-  "testimonials/fetchTestimonialById",
-  async (id: string, { rejectWithValue }) => {
-    try {
-      const response = await apiService.get(`/api/testimonials/${id}`);
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || error.message);
-    }
-  }
-);
-
+// --- CREATE TESTIMONIAL (FIXED) ---
 export const createTestimonial = createAsyncThunk(
   "testimonials/createTestimonial",
-  async (testimonialData: TestimonialRequest, { rejectWithValue }) => {
+  async (testimonialData: FormData, { rejectWithValue }) => {
     try {
-      const response = await apiService.post(
-        "/api/testimonials",
-        testimonialData
-      );
-      return response;
+      console.log("📤 Creating testimonial with FormData");
+      console.log("FormData entries:");
+      for (let pair of testimonialData.entries()) {
+        if (pair[1] instanceof File) {
+          console.log(`  ${pair[0]}: [File] ${pair[1].name} (${pair[1].size} bytes)`);
+        } else {
+          console.log(`  ${pair[0]}: ${pair[1]}`);
+        }
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/testimonials`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          // CRITICAL: Do NOT set Content-Type for FormData
+          // Browser will set it automatically with boundary
+          ...getAuthHeaders(),
+        },
+        body: testimonialData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create testimonial');
+      }
+
+      const data = await response.json();
+      console.log("✅ Testimonial created:", data);
+      return data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      console.error("❌ Create error:", error);
+      return rejectWithValue(error.message || 'Failed to create testimonial');
     }
   }
 );
 
+// --- UPDATE TESTIMONIAL (FIXED) ---
 export const updateTestimonial = createAsyncThunk(
   "testimonials/updateTestimonial",
   async (
-    {
-      id,
-      testimonial,
-    }: { id: string; testimonial: Partial<TestimonialRequest> },
+    { id, testimonialData }: { id: string; testimonialData: FormData },
     { rejectWithValue }
   ) => {
     try {
-      const response = await apiService.put(
-        `/api/testimonials/${id}`,
-        testimonial
-      );
-      return response;
+      console.log("📤 Updating testimonial with FormData for ID:", id);
+      console.log("FormData entries:");
+      for (let pair of testimonialData.entries()) {
+        if (pair[1] instanceof File) {
+          console.log(`  ${pair[0]}: [File] ${pair[1].name} (${pair[1].size} bytes)`);
+        } else {
+          console.log(`  ${pair[0]}: ${pair[1]}`);
+        }
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/testimonials/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          // CRITICAL: Do NOT set Content-Type for FormData
+          ...getAuthHeaders(),
+        },
+        body: testimonialData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update testimonial');
+      }
+
+      const data = await response.json();
+      console.log("✅ Testimonial updated:", data);
+      return data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      console.error("❌ Update error:", error);
+      return rejectWithValue(error.message || 'Failed to update testimonial');
     }
   }
 );
 
+// --- DELETE TESTIMONIAL ---
 export const deleteTestimonial = createAsyncThunk(
   "testimonials/deleteTestimonial",
   async (id: string, { rejectWithValue }) => {
     try {
-      const response = await apiService.delete(`/api/testimonials/${id}`);
-      return { ...response, id };
+      const response = await fetch(`${API_BASE_URL}/api/testimonials/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      return { id };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      return rejectWithValue(error.message || 'Failed to delete testimonial');
     }
   }
 );
 
+// --- TOGGLE VISIBILITY ---
 export const toggleTestimonialVisibility = createAsyncThunk(
   "testimonials/toggleTestimonialVisibility",
   async (
@@ -176,17 +224,29 @@ export const toggleTestimonialVisibility = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await apiService.put(`/api/testimonials/${id}`, {
-        isVisible,
+      const response = await fetch(`${API_BASE_URL}/api/testimonials/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ isVisible }),
       });
-      return response;
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      return await response.json();
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      return rejectWithValue(error.message || 'Failed to toggle visibility');
     }
   }
 );
 
-// Slice
+// --- SLICE DEFINITION ---
 const testimonialsSlice = createSlice({
   name: "testimonials",
   initialState,
@@ -194,19 +254,15 @@ const testimonialsSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    clearCurrentTestimonial: (state) => {
-      state.currentTestimonial = null;
-    },
     setCurrentPage: (state, action: PayloadAction<number>) => {
       state.page = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch testimonials
-      .addCase(fetchTestimonials.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+      // Fetch Testimonials
+      .addCase(fetchTestimonials.pending, (state) => { 
+        state.loading = true; 
       })
       .addCase(fetchTestimonials.fulfilled, (state, action) => {
         state.loading = false;
@@ -219,25 +275,10 @@ const testimonialsSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-
-      // Fetch testimonial by ID
-      .addCase(fetchTestimonialById.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchTestimonialById.fulfilled, (state, action) => {
-        state.loading = false;
-        state.currentTestimonial = action.payload.data;
-      })
-      .addCase(fetchTestimonialById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-
-      // Create testimonial
-      .addCase(createTestimonial.pending, (state) => {
-        state.creating = true;
-        state.error = null;
+      // Create Testimonial
+      .addCase(createTestimonial.pending, (state) => { 
+        state.creating = true; 
+        state.error = null; 
       })
       .addCase(createTestimonial.fulfilled, (state, action) => {
         state.creating = false;
@@ -248,64 +289,46 @@ const testimonialsSlice = createSlice({
         state.creating = false;
         state.error = action.payload as string;
       })
-
-      // Update testimonial
-      .addCase(updateTestimonial.pending, (state) => {
-        state.updating = true;
-        state.error = null;
+      // Update Testimonial
+      .addCase(updateTestimonial.pending, (state) => { 
+        state.updating = true; 
+        state.error = null; 
       })
       .addCase(updateTestimonial.fulfilled, (state, action) => {
         state.updating = false;
-        const index = state.testimonials.findIndex(
-          (t) => t._id === action.payload.data._id
-        );
+        const index = state.testimonials.findIndex(t => t._id === action.payload.data._id);
         if (index !== -1) {
           state.testimonials[index] = action.payload.data;
-        }
-        if (state.currentTestimonial?._id === action.payload.data._id) {
-          state.currentTestimonial = action.payload.data;
         }
       })
       .addCase(updateTestimonial.rejected, (state, action) => {
         state.updating = false;
         state.error = action.payload as string;
       })
-
-      // Delete testimonial
-      .addCase(deleteTestimonial.pending, (state) => {
-        state.deleting = true;
-        state.error = null;
+      // Delete Testimonial
+      .addCase(deleteTestimonial.pending, (state) => { 
+        state.deleting = true; 
+        state.error = null; 
       })
       .addCase(deleteTestimonial.fulfilled, (state, action) => {
         state.deleting = false;
-        state.testimonials = state.testimonials.filter(
-          (t) => t._id !== action.payload.id
-        );
-        state.total = Math.max(0, state.total - 1);
-        if (state.currentTestimonial?._id === action.payload.id) {
-          state.currentTestimonial = null;
-        }
+        state.testimonials = state.testimonials.filter(t => t._id !== action.payload.id);
+        state.total -= 1;
       })
       .addCase(deleteTestimonial.rejected, (state, action) => {
         state.deleting = false;
         state.error = action.payload as string;
       })
-
-      // Toggle visibility
-      .addCase(toggleTestimonialVisibility.pending, (state) => {
-        state.toggling = true;
-        state.error = null;
+      // Toggle Visibility
+      .addCase(toggleTestimonialVisibility.pending, (state) => { 
+        state.toggling = true; 
+        state.error = null; 
       })
       .addCase(toggleTestimonialVisibility.fulfilled, (state, action) => {
         state.toggling = false;
-        const index = state.testimonials.findIndex(
-          (t) => t._id === action.payload.data._id
-        );
+        const index = state.testimonials.findIndex(t => t._id === action.payload.data._id);
         if (index !== -1) {
           state.testimonials[index] = action.payload.data;
-        }
-        if (state.currentTestimonial?._id === action.payload.data._id) {
-          state.currentTestimonial = action.payload.data;
         }
       })
       .addCase(toggleTestimonialVisibility.rejected, (state, action) => {
@@ -315,35 +338,9 @@ const testimonialsSlice = createSlice({
   },
 });
 
-export const { clearError, clearCurrentTestimonial, setCurrentPage } =
-  testimonialsSlice.actions;
+export const { clearError, setCurrentPage } = testimonialsSlice.actions;
 export default testimonialsSlice.reducer;
 
-// Selectors
-export const selectTestimonials = (state: {
-  testimonials: TestimonialsState;
-}) => state.testimonials.testimonials;
-export const selectCurrentTestimonial = (state: {
-  testimonials: TestimonialsState;
-}) => state.testimonials.currentTestimonial;
-export const selectTestimonialsLoading = (state: {
-  testimonials: TestimonialsState;
-}) => state.testimonials.loading;
-export const selectTestimonialsError = (state: {
-  testimonials: TestimonialsState;
-}) => state.testimonials.error;
-export const selectTestimonialsPagination = (state: {
-  testimonials: TestimonialsState;
-}) => ({
-  total: state.testimonials.total,
-  page: state.testimonials.page,
-  totalPages: state.testimonials.totalPages,
-});
-export const selectTestimonialsActionStates = (state: {
-  testimonials: TestimonialsState;
-}) => ({
-  creating: state.testimonials.creating,
-  updating: state.testimonials.updating,
-  deleting: state.testimonials.deleting,
-  toggling: state.testimonials.toggling,
-});
+// --- SELECTORS ---
+export const selectAllTestimonials = (state: { testimonials: TestimonialsState }) => 
+  state.testimonials;

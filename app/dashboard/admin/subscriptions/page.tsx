@@ -139,7 +139,7 @@ export default function AdminSubscriptionsPage() {
                     </ul>
                   </TableCell>
                   <TableCell>
-                    {plan.popular && <Badge variant="destructive">Yes</Badge>}
+                    {plan.popular? <Badge variant="secondary">Yes</Badge>:<Badge variant="destructive">No</Badge>}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end items-center gap-2">
@@ -176,7 +176,7 @@ export default function AdminSubscriptionsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} disabled={loading} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction onClick={confirmDelete} disabled={loading} className="bg-[var(--destructive)] hover:bg-[var(--destructive)]/90">
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Yes, delete plan'}
             </AlertDialogAction>
           </AlertDialogFooter>

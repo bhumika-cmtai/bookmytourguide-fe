@@ -45,7 +45,7 @@ const adminNavigation = [
 
 const guideNavigation = [
   { name: "Dashboard", href: "/dashboard/guide", icon: LayoutGrid },
-  { name: "My Profile", href: "/dashboard/guide/profile", icon: UserCircle },
+  { name: "Edit Profile", href: "/dashboard/guide/profile", icon: UserCircle },
   { name: "Current Tours", href: "/dashboard/guide/current-tours", icon: Bus },
   { name: "Previous Tours", href: "/dashboard/guide/previous-tours", icon: BusFront },
   { name: "Upcomming Tours", href: "/dashboard/guide/upcomming-tours", icon: Binoculars },

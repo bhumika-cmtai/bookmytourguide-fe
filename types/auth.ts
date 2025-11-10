@@ -94,6 +94,7 @@ export interface GetUsersParams {
   page?: number;
   limit?: number;
   search?: string;
+  role?:string;
 }
 
 export interface OTPRequest {

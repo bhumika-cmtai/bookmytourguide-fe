@@ -4,7 +4,8 @@ import {
   fetchPackages,
   addPackage,
   updatePackage,
-  deletePackage
+  deletePackage,
+  fetchPackageById
 } from './thunks/admin/packageThunks'; // Package thunks ko import karein
 
 // ✅ Define a state shape specifically for this slice
@@ -96,6 +97,23 @@ const packageSlice = createSlice({
       .addCase(deletePackage.rejected, (state, action) => {
         state.loading = 'failed';
         state.currentAction = null;
+        state.error = action.payload as string;
+      })
+      .addCase(fetchPackageById.pending, (state) => {
+        state.loading = 'pending';
+        state.error = null;
+      })
+      .addCase(fetchPackageById.fulfilled, (state, action: PayloadAction<AdminPackage>) => {
+        state.loading = 'succeeded';
+        
+        // Prevent duplicates: only add the package if it's not already in the list
+        const exists = state.items.find(pkg => pkg._id === action.payload._id);
+        if (!exists) {
+          state.items.push(action.payload);
+        }
+      })
+      .addCase(fetchPackageById.rejected, (state, action) => {
+        state.loading = 'failed';
         state.error = action.payload as string;
       });
   },

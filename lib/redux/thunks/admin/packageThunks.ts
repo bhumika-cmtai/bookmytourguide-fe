@@ -62,3 +62,16 @@ export const updatePackage = createAsyncThunk<AdminPackage, { id: string; packag
     }
   }
 );
+
+export const fetchPackageById = createAsyncThunk<AdminPackage, string>(
+  'packages/fetchById',
+  async (packageId, { rejectWithValue }) => {
+    try {
+      // This assumes you have a backend API endpoint like GET /api/packages/:id
+      const response = await apiService.get<AdminPackage>(`/api/packages/${packageId}`);
+      return response.data!;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to fetch package');
+    }
+  }
+);

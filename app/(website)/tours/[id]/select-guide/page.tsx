@@ -1,89 +1,214 @@
 // app/tours/[id]/select-guide/page.tsx
-"use client"
+"use client";
 
-import { Suspense } from 'react';
-import { useSearchParams, notFound, useParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams, notFound, useParams } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
 
-import { guides, tours, isDateRangeAvailable } from '@/lib/data';
-import { GuideCard } from '@/components/GuideCard';
-import HeroSection from '@/components/all/CommonHeroSection';
-import { XCircle } from 'lucide-react';
+import { GuideCard } from "@/components/GuideCard";
+import HeroSection from "@/components/all/CommonHeroSection";
+import { XCircle } from "lucide-react";
+import { RootState, AppDispatch } from "@/lib/store";
+import { getAllGuides } from "@/lib/redux/thunks/guide/guideThunk";
+import { fetchPackages } from "@/lib/redux/thunks/admin/packageThunks";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
+
+// Skeleton component remains the same
+const GuideCardSkeleton = () => (
+    <Card className="animate-pulse">
+        <div className="w-full h-56 bg-gray-300 rounded-t-lg"></div>
+        <div className="p-4 space-y-3">
+            <div className="h-6 bg-gray-300 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+            <div className="flex justify-between items-center pt-2">
+                <div className="h-8 bg-gray-300 rounded w-1/3"></div>
+                <div className="h-10 bg-gray-300 rounded w-1/4"></div>
+            </div>
+        </div>
+    </Card>
+);
 
 function GuideSelectionContent() {
-    const params = useParams();
-    const searchParams = useSearchParams();
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const dispatch = useDispatch<AppDispatch>();
 
-    const tourId = Array.isArray(params.id) ? params.id[0] : params.id;
-    const tour = tours.find(t => t._id === tourId);
+  const [selectedLanguage, setSelectedLanguage] = useState("all");
 
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const numberOfTourists = searchParams.get('tourists');
+  const tourId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
+  const numberOfTourists = searchParams.get("tourists");
 
-    if (!tour || !startDate || !endDate || !numberOfTourists) {
-        notFound();
+  // --- Data fetching from Redux remains the same ---
+  const { items: packages, loading: packagesLoading } = useSelector(
+    (state: RootState) => state.packages
+  );
+  const {
+    guides,
+    loading: guidesLoading,
+    error,
+  } = useSelector((state: RootState) => state.guide);
+  const tour = packages.find((t) => t._id === tourId);
+
+  useEffect(() => {
+    // Note: We still fetch all approved guides from the backend.
+    // The 'isCertified' check is handled on the client-side for flexibility.
+    dispatch(getAllGuides({ approved: true }));
+    if (packages.length === 0) {
+      dispatch(fetchPackages());
+    }
+  }, [dispatch, packages.length]);
+
+  const uniqueLanguages = useMemo(() => {
+    const languages = new Set<string>();
+    guides.forEach((guide) => {
+      // Only show languages from qualified guides
+      if (guide.isApproved && guide.isCertified) {
+        guide.languages?.forEach((lang) => languages.add(lang));
+      }
+    });
+    return ["all", ...Array.from(languages)];
+  }, [guides]);
+
+  // --- CORE LOGIC UPDATE ---
+  const availableGuides = useMemo(() => {
+    if (!startDate || !endDate || guides.length === 0) {
+      return [];
+    }
+    
+    const bookingStart = new Date(startDate);
+    bookingStart.setUTCHours(0, 0, 0, 0);
+
+    const bookingEnd = new Date(endDate);
+    bookingEnd.setUTCHours(0, 0, 0, 0);
+
+    // --- NEW: Step 1 - Pre-filter for approved AND certified guides ---
+    const qualifiedGuides = guides.filter(
+      (guide) => guide.isApproved && guide.isCertified
+    );
+
+    // Step 2: Filter the *qualified* guides based on their unavailable dates
+    const dateFilteredGuides = qualifiedGuides.filter((guide) => {
+      if (!guide.unavailableDates || guide.unavailableDates.length === 0) {
+        return true; // Available if no unavailable dates are set
+      }
+
+      const isUnavailable = guide.unavailableDates.some((unavailableDateStr) => {
+        const unavailableDate = new Date(unavailableDateStr);
+        unavailableDate.setUTCHours(0, 0, 0, 0);
+        return unavailableDate >= bookingStart && unavailableDate <= bookingEnd;
+      });
+
+      return !isUnavailable; // A guide is available if they are NOT unavailable
+    });
+
+    // Step 3: Further filter by the selected language
+    if (selectedLanguage === "all") {
+      return dateFilteredGuides;
     }
 
-    const tourDurationDays = parseInt(tour.duration) || 1;
-
-    // --- Core Filtering Logic ---
-    const availableGuides = guides.filter(guide => 
-        isDateRangeAvailable(guide, startDate, tourDurationDays)
+    return dateFilteredGuides.filter(
+      (guide) =>
+        guide.languages?.some(
+          (lang) => lang.toLowerCase() === selectedLanguage.toLowerCase()
+        )
     );
-    // --------------------------
+  }, [guides, startDate, endDate, selectedLanguage]);
+  
+  // The rest of the component's JSX remains the same
 
-    const formattedStartDate = new Date(startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-    const formattedEndDate = new Date(endDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-
+  const isLoading = packagesLoading === "pending" || guidesLoading;
+  if (isLoading) {
     return (
-        <main>
-            <HeroSection
-                badgeText={`For ${numberOfTourists} Guest(s) from ${formattedStartDate} - ${formattedEndDate}`}
-                title="Available Local Guides"
-                description={`Here are the expert guides available for your ${tour.title} tour.`}
-                backgroundImage="/3.jpg"
-            />
-
-            <section className="py-16 md:py-24">
-                <div className="container max-w-7xl mx-auto px-4">
-                    {availableGuides.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {availableGuides.map((guide, index) => {
-                                // Construct the final checkout link for each guide
-                                const checkoutHref = `/checkout?tourId=${tourId}&guideId=${guide.guideProfileId}&startDate=${startDate}&endDate=${endDate}&tourists=${numberOfTourists}`;
-                                
-                                return (
-                                    <div
-                                        key={guide._id}
-                                        className="animate-fade-in-up"
-                                        style={{ animationDelay: `${index * 100}ms` }}
-                                    >
-                                        <GuideCard guide={guide} checkoutHref={checkoutHref} />
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className="text-center py-16 max-w-lg mx-auto">
-                            <XCircle className="w-16 h-16 mx-auto text-destructive mb-4" />
-                            <h2 className="text-3xl font-bold mb-2">No Guides Available</h2>
-                            <p className="text-muted-foreground text-lg">
-                                Unfortunately, no guides are available for the selected dates. Please go back and try a different start date.
-                            </p>
-                        </div>
-                    )}
-                </div>
-            </section>
-        </main>
+      <div className="container max-w-7xl mx-auto px-4 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg-grid-cols-3 gap-8">
+          {Array.from({ length: 3 }).map((_, i) => <GuideCardSkeleton key={i} />)}
+        </div>
+      </div>
     );
+  }
+
+  if (!tour || !startDate || !endDate || !numberOfTourists) {
+    notFound();
+  }
+
+  const formattedStartDate = new Date(startDate + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  const formattedEndDate = new Date(endDate + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric" });
+
+  return (
+    <main>
+      <HeroSection
+        badgeText={`For ${numberOfTourists} Guest(s) from ${formattedStartDate} - ${formattedEndDate}`}
+        title="Available Local Guides"
+        description={`Here are the expert guides available for your ${tour.title} tour.`}
+        backgroundImage="/3.jpg"
+      />
+
+      <section className="py-6 bg-background/80 backdrop-blur-sm border-b sticky top-0 z-10">
+        <div className="container max-w-7xl mx-auto px-4 flex justify-center">
+          <div className="w-full md:w-72">
+            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+              <SelectTrigger className="h-12 text-base">
+                <SelectValue placeholder="Filter by Language" />
+              </SelectTrigger>
+              <SelectContent>
+                {uniqueLanguages.map((lang) => (
+                  <SelectItem key={lang} value={lang} className="capitalize">
+                    {lang === 'all' ? 'All Languages' : lang}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 md:py-24">
+        <div className="container max-w-7xl mx-auto px-4">
+          {availableGuides.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {availableGuides.map((guide, index) => {
+                const checkoutHref = `/checkout?tourId=${tourId}&guideId=${guide._id}&startDate=${startDate}&endDate=${endDate}&tourists=${numberOfTourists}`;
+                return (
+                  <div
+                    key={guide._id}
+                    className="animate-fade-in-up"
+                    style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards', opacity: 0 }}
+                  >
+                    <GuideCard guide={guide} checkoutHref={checkoutHref} />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-16 max-w-lg mx-auto">
+              <XCircle className="w-16 h-16 mx-auto text-destructive mb-4" />
+              <h2 className="text-3xl font-bold mb-2">No Guides Available</h2>
+              <p className="text-muted-foreground text-lg">
+                Unfortunately, no guides are available that match your criteria. Please go back and try a different date or language.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+    </main>
+  );
 }
 
 export default function SelectGuidePage() {
-    return (
-        <div className="min-h-screen bg-background">
-            <Suspense fallback={<div className="flex justify-center items-center h-screen">Loading available guides...</div>}>
-                <GuideSelectionContent />
-            </Suspense>
-        </div>
-    );
+  return (
+    <div className="min-h-screen bg-background">
+      <Suspense fallback={<div className="flex justify-center items-center h-screen font-bold text-xl">Loading available guides...</div>}>
+        <GuideSelectionContent />
+      </Suspense>
+    </div>
+  );
 }

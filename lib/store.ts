@@ -7,7 +7,8 @@ import packageReducer from "@/lib/redux/packageSlice";
 import adminReducer from "@/lib/redux/adminSlice"
 import languageReducer from "@/lib/redux/languageSlice"
 import subscriptionReducer from "@/lib/redux/subscriptionSlice"
-
+import contactReducer from "@/lib/redux/contactSlice"
+import bookingReducer from "@/lib/redux/bookingSlice"
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -17,8 +18,11 @@ export const store = configureStore({
     packages: packageReducer,
     admin: adminReducer,
     languages: languageReducer,
-    subscriptions: subscriptionReducer
-  },
+    subscriptions: subscriptionReducer,
+    contacts: contactReducer,
+    bookings: bookingReducer
+
+  },  
 });
 
 export type RootState = ReturnType<typeof store.getState>;

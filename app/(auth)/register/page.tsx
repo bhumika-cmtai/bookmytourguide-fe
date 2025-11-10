@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    mobile: "",
     password: "",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -160,6 +161,15 @@ export default function RegisterPage() {
       toast.error("Please enter a valid email address.");
       return false;
     }
+    // ✅ STEP 2: Add validation for the mobile number
+    if (!formData.mobile.trim()) {
+      toast.error("Please enter your mobile number.");
+      return false;
+    }
+    if (!/^\d{10,}$/.test(formData.mobile.trim())) {
+      toast.error("Please enter a valid 10-digit (or more) mobile number.");
+      return false;
+    }
     if (formData.password.length < 6) {
       toast.error("Password must be at least 6 characters long.");
       return false;
@@ -193,6 +203,7 @@ export default function RegisterPage() {
     formDataToSend.append("password", formData.password);
     formDataToSend.append("otp", otpValue);
     formDataToSend.append("role", userType);
+    formDataToSend.append("mobile", formData.mobile);
 
     const result = await verifyAndRegister(formDataToSend);
 
@@ -261,6 +272,14 @@ export default function RegisterPage() {
             type="email"
             placeholder="Email Address *"
             value={formData.email}
+            onChange={handleInputChange}
+            disabled={loading}
+          />
+          <Input
+            name="mobile"
+            type="tel" // Use "tel" for better mobile keyboard experience
+            placeholder="Mobile Number *"
+            value={formData.mobile}
             onChange={handleInputChange}
             disabled={loading}
           />

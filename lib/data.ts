@@ -28,40 +28,56 @@ export type Review = {
 
   export type Guide = {
     _id: string;
-    guideProfileId: string;
+    user: string;
     name: string;
     email: string;
-    mobile: string;
-    age: number;
-    state: string;
-    country: string;
-    languages: string[];
-    experience: string;
-    specializations: string[];
-    description: string;
-    photo: string;
-    averageRating: number;
-    numReviews: number;
+    mobile?: string;
+    dob?: string;
+    state?: string;
+    country?: string;
+    age?: number;
+    languages?: string[];
+    experience?: string;
+    specializations?: string[];
+    availability?: string[];
+    description?: string;
+    license?: string;
+    photo?: string;
+    isApproved: boolean;
+    profileComplete: boolean;
+    createdAt: string;
+    updatedAt: string;
+    guideProfileId: string;
+    averageRating?: number;
+    numReviews?: number;
+    isCertified: boolean;
+    subscriptionId:string;
+    subscriptionPlan: string;
+    subscriptionExpiresAt?: Date;
     // Optimized availability using date ranges
     availabilityPeriods: AvailabilityPeriod[];
+    unavailableDates:Date[];
   };
   
 export type BookingStatus = "Upcoming" | "Completed" | "Cancelled";
+export type PaymentStatus = "Advance Paid" | "Fully Paid" | "Refunded";
 
-export type Booking = {
-  _id: string; // Unique ID for the booking itself
-  userName?: string;
-  userEmail?: string;
-  bookingDate: string; // "YYYY-MM-DD"
-  tourId: string; // Foreign key to the Tour
-  guideId: string; // Foreign key to the Guide
-  substituteGuideId?: string;
-  startDate: string; // "YYYY-MM-DD"
-  endDate: string; // "YYYY-MM-DD"
+export interface Booking {
+  _id: string;
+  tour: string; // This will be the ID of the AdminPackage
+  guide: string; // This will be the ID of the Guide
+  user: string; // This will be the ID of the User
+  startDate: string; // Stored as an ISO date string, e.g., "2025-11-19T00:00:00.000Z"
+  endDate: string; // Stored as an ISO date string
+  numberOfTourists: number;
   totalPrice: number;
+  advanceAmount: number;
+  paymentId: string;
   status: BookingStatus;
-  advancePaid: boolean; 
-};
+  paymentStatus: PaymentStatus;
+  createdAt: string; // From Mongoose timestamps
+  updatedAt: string; // From Mongoose timestamps
+}
 
 export type CustomTourRequestStatus = "Pending" | "Quoted" | "Booked" | "Rejected";
 
@@ -99,6 +115,89 @@ export type User = {
   email: string;
   role: "user" | "guide" | "admin";
 };
+
+export type AdminAddOn = {
+  title: string;
+  price: number;
+};
+
+// Defines the structure for a location package created by the admin
+export type AdminLocation = {
+  _id: string;
+  placeName: string;
+  pricePerPerson: number;
+  description: string;
+  image: string;
+  addOns: AdminAddOn[];
+};
+
+
+
+export type LanguageOption = {
+  _id: string;
+  languageName: string;
+  extraCharge: number; // The additional cost for this language service
+};
+
+
+export type SubscriptionPlan = {
+  _id: string;
+  title: string;
+  duration: string;
+  totalPrice: number;
+  monthlyPrice: number;
+  benefits: string[];
+  popular: boolean; // To highlight the "Most Popular" plan
+};
+
+export interface GuideProfile {
+  _id: string;
+  user: string;
+  name: string;
+  email: string;
+  mobile?: string;
+  dob?: string;
+  state?: string;
+  country?: string;
+  age?: number;
+  languages?: string[];
+  experience?: string;
+  specializations?: string[];
+  availability?: string[];
+  description?: string;
+  license?: string;
+  photo?: string;
+  isApproved: boolean;
+  profileComplete: boolean;
+  createdAt: string;
+  updatedAt: string;
+  guideProfileId: string;
+  averageRating: number;
+  numReviews: number;
+  isCertified: boolean;
+  subscriptionId:string;
+  subscriptionPlan: string;
+  subscriptionExpiresAt?: Date;
+  // Optimized availability using date ranges
+  availabilityPeriods: AvailabilityPeriod[];
+  unavailableDates:Date[];
+  
+}
+
+// Defines the shape of the state within the guide slice
+export interface GuideState {
+  guides: GuideProfile[];
+  currentGuide: GuideProfile | null;
+  myProfile: GuideProfile | null;
+  loading: boolean;
+  error: string | null;
+  pagination: {
+    total: number;
+    page: number;
+    totalPages: number;
+  };
+}
+
 
 export const users: User[] = [
   { id: 'user-1', name: 'Alice Johnson', email: 'alice.j@example.com', role: 'user' },
@@ -175,8 +274,6 @@ export const tours: Tour[] = [
   },
   // Add more tours as needed...
 ];
-
-
 
       // --- NEW GUIDE DATA ---
 export const guides: Guide[] = [
@@ -832,22 +929,6 @@ export const addOnPerks: AddOnPerk[] = [
 ];
 
 
-
-export type AdminAddOn = {
-  title: string;
-  price: number;
-};
-
-// Defines the structure for a location package created by the admin
-export type AdminLocation = {
-  _id: string;
-  placeName: string;
-  pricePerPerson: number;
-  description: string;
-  image: string;
-  addOns: AdminAddOn[];
-};
-
 export const adminLocations: AdminLocation[] = [
   {
     _id: 'loc_01',
@@ -886,13 +967,6 @@ export const adminLocations: AdminLocation[] = [
   },
 ];
 
-
-
-export type LanguageOption = {
-  _id: string;
-  languageName: string;
-  extraCharge: number; // The additional cost for this language service
-};
 
 export const languageOptions: LanguageOption[] = [
   {
@@ -1002,15 +1076,6 @@ export const myBookingsData: Booking[] = [
   },
 ];
 
-export type SubscriptionPlan = {
-  _id: string;
-  title: string;
-  duration: string;
-  totalPrice: number;
-  monthlyPrice: number;
-  benefits: string[];
-  popular: boolean; // To highlight the "Most Popular" plan
-};
 
 export const subscriptionPlans: SubscriptionPlan[] = [
   {

@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import { Header } from "@/components/layout/website/Header";
 import { Footer } from "@/components/layout/website/Footer";
+import Script from 'next/script';
 import { CartProvider } from "@/contexts/CardContext";
 
 export const metadata: Metadata = {
@@ -23,9 +24,11 @@ export default function RootLayout({
   return (
         <CartProvider>
           <Header />
-          <Suspense fallback={null}>{children}</Suspense>
+          <Suspense fallback={null}>{children}
+          </Suspense>
           <Footer />
           <Analytics />
+          <Script src="https://checkout.razorpay.com/v1/checkout.js" />
         </CartProvider>
   );
 }

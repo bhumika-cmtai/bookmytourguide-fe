@@ -1,8 +1,8 @@
 // app/tours/page.tsx
 "use client";
 
-import { useState } from "react";
-import { tours } from "@/lib/data";
+import { useState, useEffect, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { TourCard } from "@/components/TourCard";
 import HeroSection from "@/components/all/CommonHeroSection";
 import { Input } from "@/components/ui/input";
@@ -14,31 +14,131 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
+import { RootState, AppDispatch } from "@/lib/store";
+import { fetchPackages } from "@/lib/redux/thunks/admin/packageThunks";
+import { fetchAdminLocations } from "@/lib/redux/thunks/admin/locationThunks";
+import { Card } from "@/components/ui/card";
+
+// A skeleton component to show while loading
+const TourCardSkeleton = () => (
+  <Card className="animate-pulse">
+    <div className="w-full h-48 bg-gray-300 rounded-t-lg"></div>
+    <div className="p-4 space-y-3">
+      <div className="h-6 bg-gray-300 rounded w-3/4"></div>
+      <div className="h-4 bg-gray-300 rounded"></div>
+      <div className="h-4 bg-gray-300 rounded w-5/6"></div>
+      <div className="flex justify-between items-center pt-2">
+        <div className="h-8 bg-gray-300 rounded w-1/3"></div>
+        <div className="h-10 bg-gray-300 rounded w-1/4"></div>
+      </div>
+    </div>
+  </Card>
+);
 
 export default function ToursPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("all");
 
-  const locations = ["all", ...new Set(tours.flatMap((tour) => tour.locations))];
+  const dispatch = useDispatch<AppDispatch>();
+  const {
+    items: tours,
+    loading: toursLoading,
+    error: toursError,
+  } = useSelector((state: RootState) => state.packages);
+  const { locations: adminLocations } = useSelector(
+    (state: RootState) => state.admin
+  );
 
-  const filteredTours = tours.filter((tour) => {
-    const matchesSearch =
-      tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tour.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLocation =
-      selectedLocation === "all" || tour.locations.some(loc => loc.toLowerCase() === selectedLocation.toLowerCase());
-    return matchesSearch && matchesLocation;
-  });
+  useEffect(() => {
+    // Fetch initial data when the component mounts
+    dispatch(fetchPackages());
+    dispatch(fetchAdminLocations());
+  }, [dispatch]);
+
+  // Memoize the locations list to prevent re-computation
+  const locations = useMemo(() => {
+    const uniqueLocations = [
+      ...new Set(adminLocations.map((loc) => loc.placeName.toLowerCase())),
+    ];
+    return ["all", ...uniqueLocations];
+  }, [adminLocations]);
+
+  // Memoize the filtered tours to optimize performance
+  const filteredTours = useMemo(() => {
+    return tours.filter((tour) => {
+      const matchesSearch =
+        tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tour.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesLocation =
+        selectedLocation === "all" ||
+        tour.locations.some(
+          (loc) => loc.toLowerCase() === selectedLocation.toLowerCase()
+        );
+      return matchesSearch && matchesLocation;
+    });
+  }, [tours, searchTerm, selectedLocation]);
+
+  const renderContent = () => {
+    if (toursLoading === "pending") {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <TourCardSkeleton key={index} />
+          ))}
+        </div>
+      );
+    }
+
+    if (toursError) {
+      return (
+        <div className="text-center py-16">
+          <h2 className="text-2xl font-bold mb-2 text-destructive">
+            Failed to Load Tours
+          </h2>
+          <p className="text-muted-foreground">{toursError}</p>
+        </div>
+      );
+    }
+
+    if (filteredTours.length > 0) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredTours.map((tour, index) => (
+            <div
+              key={tour._id}
+              className="animate-fade-in-up"
+              style={{
+                animationDelay: `${index * 100}ms`,
+                opacity: 0,
+                animationFillMode: "forwards",
+              }}
+            >
+              <TourCard tour={tour} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-center py-16">
+        <h2 className="text-2xl font-bold mb-2">No Tours Found</h2>
+        <p className="text-muted-foreground">
+          Try adjusting your search or filters.
+        </p>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <main>
-      <HeroSection
-      badgeText="Explore Tours"
-      title="Discover India's Hidden Gems"
-      description="Browse curated experiences led by verified local guides and uncover the heart of every destination."
-      backgroundImage="/3.jpg"
-      />
+        <HeroSection
+          badgeText="Explore Tours"
+          title="Discover India's Hidden Gems"
+          description="Browse curated experiences led by verified local guides and uncover the heart of every destination."
+          backgroundImage="/3.jpg"
+        />
 
         <section className="sticky top-0 z-20 py-6 bg-background/80 backdrop-blur-lg border-b">
           <div className="container max-w-7xl mx-auto px-4">
@@ -61,7 +161,11 @@ export default function ToursPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {locations.map((location) => (
-                    <SelectItem key={location} value={location} className="capitalize">
+                    <SelectItem
+                      key={location}
+                      value={location}
+                      className="capitalize"
+                    >
                       {location === "all" ? "All Locations" : location}
                     </SelectItem>
                   ))}
@@ -73,24 +177,7 @@ export default function ToursPage() {
 
         <section className="py-16">
           <div className="container max-w-7xl mx-auto px-4">
-            {filteredTours.length > 0 ? (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                 {filteredTours.map((tour, index) => (
-                   <div
-                     key={tour._id}
-                     className="animate-fade-in-up"
-                     style={{ animationDelay: `${index * 100}ms`, opacity: 0 }}
-                   >
-                     <TourCard tour={tour} />
-                   </div>
-                 ))}
-               </div>
-            ) : (
-                <div className="text-center py-16">
-                    <h2 className="text-2xl font-bold mb-2">No Tours Found</h2>
-                    <p className="text-muted-foreground">Try adjusting your search or filters.</p>
-                </div>
-            )}
+            {renderContent()}
           </div>
         </section>
       </main>

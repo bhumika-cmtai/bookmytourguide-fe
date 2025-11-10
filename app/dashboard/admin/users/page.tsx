@@ -1,93 +1,95 @@
 // app/dashboard/admin/users/page.tsx
 "use client";
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { bookings, tours } from '@/lib/data'; // Import bookings and tours data
-import { users as initialUsers } from '@/lib/data'; // Assuming users are in data.ts
-import type { User, Booking, Tour } from '@/lib/data';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import type { User } from '@/lib/data';
+
+import { useUser } from '@/lib/hooks/useUser'; // <-- 1. Import the custom hook
+
 import { 
-  Search, 
-  Filter,
-  Eye,
-  Trash2,
-  Users as UsersIcon,
-  ShoppingBag,
-  Calendar
+  Search, Filter, Eye, Trash2, Users as UsersIcon,
+  ShoppingBag, Calendar, Loader2, ChevronLeft, ChevronRight
 } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+  Table, TableBody, TableCell, TableHead, 
+  TableHeader, TableRow 
 } from '@/components/ui/table';
 import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
+  Card, CardContent, CardHeader, CardTitle, 
   CardDescription 
 } from '@/components/ui/card';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-  SheetClose,
+  Sheet, SheetContent, SheetHeader, SheetTitle,
+  SheetDescription, SheetFooter, SheetClose,
 } from "@/components/ui/sheet";
-import { Separator } from '@/components/ui/separator';
+
+// 2. A custom hook to debounce user input
+const useDebounce = (value: string, delay: number): string => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedValue(value), delay);
+        return () => clearTimeout(handler);
+    }, [value, delay]);
+    return debouncedValue;
+};
 
 export default function UsersAdminPage() {
-  const [allUsers, setAllUsers] = useState<User[]>(initialUsers);
+  // 3. Use the custom hook to interact with the Redux store
+  const { 
+    users, 
+    pagination, 
+    loading, 
+    error, 
+    getAllUsers, 
+    deleteUser 
+  } = useUser();
+  
+  // 4. State for UI controls
+  const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'user' | 'guide'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'user' | 'guide'>('user');
+  const debouncedSearch = useDebounce(searchTerm, 500); // 500ms delay
   
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  // Find all bookings made by the selected user
-  const userBookings = useMemo(() => {
-    if (!selectedUser) return [];
-    return bookings
-      .filter(b => b.userEmail === selectedUser.email)
-      .map(booking => ({
-        ...booking,
-        tour: tours.find(t => t._id === booking.tourId)
-      }))
-      .filter(b => b.tour); // Ensure tour exists
-  }, [selectedUser]);
+  // 5. Fetch users whenever a filter, search term, or page changes
+  useEffect(() => {
+    getAllUsers({ page, limit: 10, search: debouncedSearch, role: roleFilter });
+  }, [page, debouncedSearch, roleFilter]); // Removed getAllUsers from deps as it's stable
 
-  const filteredUsers = useMemo(() => {
-    return allUsers
-      .filter(user => roleFilter === 'all' || user.role === roleFilter)
-      .filter(user => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-          user.name.toLowerCase().includes(searchLower) ||
-          user.email.toLowerCase().includes(searchLower)
-        );
-      });
-  }, [allUsers, searchTerm, roleFilter]);
-  
+  // Effect to show errors from the store
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
   const handleViewUser = (user: User) => {
       setSelectedUser(user);
       setIsSheetOpen(true);
   };
 
   const handleDelete = (userId: string, userName: string) => {
-    if (confirm(`Are you sure you want to delete the user "${userName}"?`)) {
-      setAllUsers(prev => prev.filter(u => u.id !== userId));
-      toast.success("User deleted successfully!");
+    if (confirm(`Are you sure you want to delete the user "${userName}"? This cannot be undone.`)) {
+      deleteUser(userId)
+        .then((result: any) => {
+          if (result.type.endsWith('fulfilled')) {
+            toast.success(`User "${userName}" was deleted.`);
+          } else {
+            toast.error(`Failed to delete user: ${result.payload}`);
+          }
+        });
     }
   };
+
+  // In a real app, user bookings would be fetched via another API call/thunk
+  const userBookings: any[] = []; 
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -131,8 +133,14 @@ export default function UsersAdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map(user => (
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="h-24 text-center">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                      </TableCell>
+                    </TableRow>
+                  ) : users.length > 0 ? (
+                    users.map(user => (
                       <TableRow key={user.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -163,7 +171,7 @@ export default function UsersAdminPage() {
                       <TableCell colSpan={3} className="h-24 text-center">
                         <div className="flex flex-col items-center gap-2">
                             <UsersIcon className="w-8 h-8 text-muted-foreground"/>
-                            <p>No users match your criteria.</p>
+                            <p>No users found.</p>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -173,6 +181,23 @@ export default function UsersAdminPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 6. Pagination Controls */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex justify-end items-center mt-6">
+             <span className="text-sm text-muted-foreground mr-4">
+                Page {pagination.page} of {pagination.totalPages}
+             </span>
+             <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={pagination.page <= 1}>
+                    <ChevronLeft className="w-4 h-4 mr-1"/> Prev
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={pagination.page >= pagination.totalPages}>
+                    Next <ChevronRight className="w-4 h-4 ml-1"/>
+                </Button>
+             </div>
+          </div>
+        )}
       </div>
 
       {/* --- USER DETAILS SHEET --- */}
@@ -186,9 +211,7 @@ export default function UsersAdminPage() {
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Profile Card */}
               <Card>
-                <CardHeader>
-                    <CardTitle>User Profile</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>User Profile</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center text-3xl font-bold">{selectedUser.name.charAt(0).toUpperCase()}</div>
@@ -206,27 +229,11 @@ export default function UsersAdminPage() {
 
               {/* Booking History Card */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Booking History ({userBookings.length})</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Booking History ({userBookings.length})</CardTitle></CardHeader>
                 <CardContent>
                   {userBookings.length > 0 ? (
                     <div className="space-y-4">
-                      {userBookings.map(booking => (
-                        <div key={booking._id} className="flex items-start gap-4 p-3 border rounded-lg">
-                          <img src={booking.tour!.images[0]} alt={booking.tour!.title} className="w-20 h-20 object-cover rounded-md" />
-                          <div className="flex-1">
-                            <div className="flex justify-between items-start">
-                              <p className="font-semibold">{booking.tour!.title}</p>
-                              <Badge variant="outline">{booking.status}</Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
-                              <Calendar className="w-3 h-3" /> {new Date(booking.startDate).toLocaleDateString()}
-                            </p>
-                            <p className="font-semibold text-primary mt-1">₹{booking.totalPrice.toLocaleString()}</p>
-                          </div>
-                        </div>
-                      ))}
+                      {/* Booking history would be rendered here */}
                     </div>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
@@ -238,9 +245,7 @@ export default function UsersAdminPage() {
               </Card>
             </div>
             <SheetFooter className="p-6 border-t bg-muted/50">
-              <SheetClose asChild>
-                <Button variant="outline">Close</Button>
-              </SheetClose>
+              <SheetClose asChild><Button variant="outline">Close</Button></SheetClose>
             </SheetFooter>
           </SheetContent>
         </Sheet>

@@ -1,109 +1,123 @@
-// app/dashboard/guide/my-schedule/page.tsx
 "use client";
 
-import { useState, useMemo } from 'react';
-import { guides as initialGuides } from '@/lib/data';
-import type { AvailabilityPeriod } from '@/lib/data';
+import { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import type { AppDispatch, RootState } from '@/lib/store';
+import { getMyGuideProfile, updateMyAvailability } from '@/lib/redux/thunks/guide/guideThunk';
 import { toast } from 'react-toastify';
 import { Calendar as CalendarIcon, CheckCircle, XCircle, RefreshCw, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // --- HELPER FUNCTION ---
-// This function "flattens" the date ranges from your data into individual Date objects for the calendar.
-const getDatesFromPeriods = (periods: AvailabilityPeriod[], availableStatus: boolean): Date[] => {
-    const dates: Date[] = [];
-    periods.forEach(period => {
-        if (period.available === availableStatus) {
-            let currentDate = new Date(period.startDate + 'T00:00:00');
-            const endDate = new Date(period.endDate + 'T00:00:00');
-            while (currentDate <= endDate) {
-                dates.push(new Date(currentDate));
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
-        }
-    });
-    return dates;
+// This function safely converts a Date object to a 'YYYY-MM-DD' string
+// based on the user's local timezone, preventing UTC conversion errors.
+const toLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 
-export default function GuideSchedulePage() {
-    const loggedInGuideId = "guide_prof_01"; // Mock: Assuming Rohan Verma is logged in
+export default function GuideAvailabilityPage() {
+    const dispatch = useDispatch<AppDispatch>();
+    const { myProfile, loading: profileLoading } = useSelector((state: RootState) => state.guide);
 
-    const [guide] = useState(() => initialGuides.find(g => g.guideProfileId === loggedInGuideId)!);
-    
-    // State to manage the user's current date selections on the calendar
     const [selectedDays, setSelectedDays] = useState<Date[] | undefined>([]);
-    
-    // State to hold the guide's availability, initialized from mock data
-    const [availableDays, setAvailableDays] = useState<Date[]>(() => getDatesFromPeriods(guide.availabilityPeriods, true));
-    const [unavailableDays, setUnavailableDays] = useState<Date[]>(() => getDatesFromPeriods(guide.availabilityPeriods, false));
+    const [unavailableDays, setUnavailableDays] = useState<Date[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const [isLoading, setIsLoading] = useState(false);
+    useEffect(() => {
+        dispatch(getMyGuideProfile());
+    }, [dispatch]);
 
-    // This function applies the user's selection to either the available or unavailable list
+    useEffect(() => {
+        if (myProfile?.unavailableDates) {
+            // Backend strings are UTC, new Date() correctly parses them into local time Date objects.
+            const dates = myProfile.unavailableDates.map(d => new Date(d));
+            setUnavailableDays(dates);
+        }
+    }, [myProfile]);
+
     const handleSetAvailability = (isAvailable: boolean) => {
         if (!selectedDays || selectedDays.length === 0) {
             toast.info("Please select one or more dates on the calendar first.");
             return;
         }
 
-        const selectedDateStrings = selectedDays.map(d => d.toISOString().split('T')[0]);
-        
+        // FIX: Use the safe `toLocalDateString` helper function for all conversions.
+        const selectedDateStrings = selectedDays.map(toLocalDateString);
+        const currentUnavailableStrings = new Set(unavailableDays.map(toLocalDateString));
+
         if (isAvailable) {
-            // Add to available, remove from unavailable
-            const newAvailable = new Set([...availableDays.map(d => d.toISOString().split('T')[0]), ...selectedDateStrings]);
-            const newUnavailable = unavailableDays.filter(d => !selectedDateStrings.includes(d.toISOString().split('T')[0]));
-            
-            setAvailableDays(Array.from(newAvailable).map(ds => new Date(ds + 'T00:00:00')));
-            setUnavailableDays(newUnavailable);
+            selectedDateStrings.forEach(date => currentUnavailableStrings.delete(date));
             toast.success(`${selectedDays.length} day(s) marked as available.`);
         } else {
-            // Add to unavailable, remove from available
-            const newUnavailable = new Set([...unavailableDays.map(d => d.toISOString().split('T')[0]), ...selectedDateStrings]);
-            const newAvailable = availableDays.filter(d => !selectedDateStrings.includes(d.toISOString().split('T')[0]));
-
-            setUnavailableDays(Array.from(newUnavailable).map(ds => new Date(ds + 'T00:00:00')));
-            setAvailableDays(newAvailable);
+            selectedDateStrings.forEach(date => currentUnavailableStrings.add(date));
             toast.success(`${selectedDays.length} day(s) marked as unavailable.`);
         }
         
-        setSelectedDays([]); // Clear selection after applying
+        // This correctly creates a local Date object from the string, which is what the calendar needs.
+        const newUnavailableDates = Array.from(currentUnavailableStrings).map(ds => new Date(ds + 'T00:00:00'));
+        setUnavailableDays(newUnavailableDates);
+        setSelectedDays([]);
     };
 
     const handleSaveChanges = async () => {
-        setIsLoading(true);
-        // In a real app, you would convert the `availableDays` and `unavailableDays` arrays
-        // back into the `availabilityPeriods` format and send it to your backend API.
-        console.log("Simulating save...");
-        console.log("New Available Days:", availableDays);
-        console.log("New Unavailable Days:", unavailableDays);
-
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
+        setIsSaving(true);
         
-        setIsLoading(false);
-        toast.success("Your schedule has been updated successfully!");
+        // FIX: Use the safe `toLocalDateString` helper function before sending to the backend.
+        const unavailableDateStrings = unavailableDays.map(toLocalDateString);
+        
+        await dispatch(updateMyAvailability({ unavailableDates: unavailableDateStrings }))
+            .unwrap()
+            .then(() => {
+                toast.success("Your schedule has been updated successfully!");
+            })
+            .catch((error) => {
+                toast.error(`Failed to update schedule: ${error}`);
+            });
+
+        setIsSaving(false);
     };
     
-    // Modifiers for react-day-picker to style the calendar dates
     const modifiers = {
-        available: availableDays,
         unavailable: unavailableDays,
     };
     const modifierStyles = {
-        available: {
-            backgroundColor: 'hsl(var(--primary) / 0.1)',
-            color: 'hsl(var(--primary))',
-            fontWeight: 'bold',
-        },
         unavailable: {
             backgroundColor: 'hsl(var(--destructive) / 0.1)',
             color: 'hsl(var(--destructive))',
             textDecoration: 'line-through',
         }
     };
+
+    if (profileLoading && !myProfile) {
+        return (
+            <div className="container max-w-7xl mx-auto px-4 py-10">
+                <Skeleton className="h-12 w-1/3 mb-4" />
+                <Skeleton className="h-6 w-2/3 mb-10" />
+                <Card className="shadow-lg">
+                    <div className="grid grid-cols-1 lg:grid-cols-3">
+                        <div className="lg:col-span-2 p-4 flex justify-center border-b lg:border-b-0 lg:border-r">
+                            <Skeleton className="w-full h-[400px]" />
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <Skeleton className="h-8 w-1/2" />
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                            <Separator className="my-6"/>
+                            <Skeleton className="h-12 w-full" />
+                        </div>
+                    </div>
+                </Card>
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-muted/50">
@@ -112,7 +126,7 @@ export default function GuideSchedulePage() {
                     <div className="container max-w-7xl mx-auto px-4">
                         <h1 className="text-4xl font-extrabold">My Schedule</h1>
                         <p className="mt-2 text-lg text-muted-foreground">
-                            Set your available and unavailable dates. This will determine which tours you are eligible for.
+                           Set your unavailable dates. All other dates will be considered available for bookings.
                         </p>
                     </div>
                 </section>
@@ -125,7 +139,7 @@ export default function GuideSchedulePage() {
                                 <div className="lg:col-span-2 p-4 flex justify-center border-b lg:border-b-0 lg:border-r">
                                     <Calendar
                                         mode="multiple"
-                                        min={0} // Allows selecting multiple dates
+                                        min={0}
                                         selected={selectedDays}
                                         onSelect={setSelectedDays}
                                         modifiers={modifiers}
@@ -140,7 +154,7 @@ export default function GuideSchedulePage() {
                                     <h3 className="text-xl font-bold mb-4">Update Your Schedule</h3>
                                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm flex items-start gap-2 mb-6">
                                         <Info className="w-4 h-4 mt-0.5 shrink-0"/>
-                                        <p>Select one or more dates on the calendar, then mark them as available or unavailable.</p>
+                                        <p>Select dates on the calendar, then mark them as available or unavailable.</p>
                                     </div>
                                     
                                     <div className="space-y-3">
@@ -156,15 +170,15 @@ export default function GuideSchedulePage() {
 
                                     <div className="space-y-3">
                                         <h4 className="font-semibold">Legend</h4>
-                                        <div className="flex items-center gap-2 text-sm"><div className="w-4 h-4 rounded-full" style={modifierStyles.available}/> Available</div>
+                                        <div className="flex items-center gap-2 text-sm"><div className="w-4 h-4 rounded-full border"/> Available</div>
                                         <div className="flex items-center gap-2 text-sm"><div className="w-4 h-4 rounded-full" style={modifierStyles.unavailable}/> Unavailable</div>
                                         <div className="flex items-center gap-2 text-sm"><div className="w-4 h-4 rounded-full bg-primary"/> Selected</div>
                                     </div>
 
                                     <Separator className="my-6"/>
                                     
-                                    <Button size="lg" className="w-full red-gradient" onClick={handleSaveChanges} disabled={isLoading}>
-                                        {isLoading ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin"/>Saving...</> : 'Save All Changes'}
+                                    <Button size="lg" className="w-full" onClick={handleSaveChanges} disabled={isSaving}>
+                                        {isSaving ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin"/>Saving...</> : 'Save All Changes'}
                                     </Button>
                                 </div>
                            </div>
