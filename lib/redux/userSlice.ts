@@ -3,6 +3,9 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { apiService } from "../service/api";
 import { User, UserState, CreateUserRequest, UpdateUserRequest, GetUsersParams, ApiResponse } from "@/types/auth";
 
+// --- IMPORTANT: Import the actions from authSlice to listen to them ---
+import { loginUser, getCurrentUser } from "./authSlice";
+
 const initialState: UserState = {
   users: [],
   currentUser: null,
@@ -18,9 +21,9 @@ const handleError = (err: any) =>
 // Helper for API response
 const getApiData = <T>(result: any): T => result.data || result;
 
-// --- Thunks ---
+// --- Thunks (No changes needed here) ---
 
-// Get own profile (replaces getUserById for current user)
+// Get own profile
 export const getOwnProfile = createAsyncThunk<User, void>(
   "user/getOwnProfile",
   async (_, { rejectWithValue }) => {
@@ -62,7 +65,7 @@ export const getAllUsers = createAsyncThunk<ApiResponse<User[]>, GetUsersParams 
   }
 );
 
-// Get user by ID (Admin only, or own profile via /me)
+// Get user by ID (Admin only)
 export const getUserById = createAsyncThunk<User, string>(
   "user/getUserById",
   async (userId, { rejectWithValue }) => {
@@ -161,6 +164,18 @@ const userSlice = createSlice({
       state.loading = false;
       state.error = action.payload as string;
     };
+
+    // --- THIS IS THE NEW, CORRECTED LOGIC ---
+    // Listen for successful authentication from authSlice and update currentUser
+    builder
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.currentUser = action.payload.data || null;
+      })
+      .addCase(getCurrentUser.fulfilled, (state, action) => {
+        state.currentUser = action.payload.data || null;
+      });
+
+    // --- YOUR EXISTING LOGIC REMAINS BELOW ---
 
     // Get Own Profile
     builder

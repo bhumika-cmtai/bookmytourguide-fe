@@ -16,8 +16,8 @@ import { clearBookingError } from '@/lib/redux/bookingSlice';
 import { apiService } from '@/lib/service/api';
 
 // --- Thunks for fetching specific data if missing ---
-import { fetchPackageById } from '@/lib/redux/thunks/admin/packageThunks'; // Ensure this path is correct
-import { getGuideById } from '@/lib/redux/thunks/guide/guideThunk'; // Ensure this path is correct
+import { fetchPackageById } from '@/lib/redux/thunks/admin/packageThunks';
+import { getGuideById } from '@/lib/redux/thunks/guide/guideThunk';
 
 // This makes the Razorpay object available on the window
 declare global {
@@ -51,15 +51,18 @@ function CheckoutContent() {
 
     // 3. useEffect to fetch missing data on page refresh
     useEffect(() => {
-        // If tourId exists in URL but the tour data is not in our Redux state, fetch it
-        if (tourId && !tour) {
+        // If tourId exists, the tour isn't in state, and we're not already loading, then fetch it.
+        if (tourId && !tour && packagesLoading !== 'pending') {
             dispatch(fetchPackageById(tourId));
         }
-        // If guideId exists in URL but the guide data is not in our Redux state, fetch it
-        if (guideId && !guide) {
+    }, [dispatch, tourId, tour, packagesLoading]);
+
+    useEffect(() => {
+        // If guideId exists, the guide isn't in state, and we are not already loading, then fetch it.
+        if (guideId && !guide && !guidesLoading) {
             dispatch(getGuideById(guideId));
         }
-    }, [dispatch, tourId, guideId, tour, guide]);
+    }, [dispatch, guideId, guide, guidesLoading]);
 
     // Effect for handling booking errors
     useEffect(() => {
@@ -78,8 +81,11 @@ function CheckoutContent() {
 
     // 4. Handle Payment Logic
     const handlePayment = async () => {
-        console.log("asdfghjk")
         if (!tour || !guide || !currentUser || !numberOfTourists) {
+            console.log("tour- ",tour)
+            console.log("guide- ",guide)
+            console.log("currentuser- ",currentUser)
+            console.log("numberOfTourists- ",numberOfTourists)
             toast({ variant: "destructive", title: "Error", description: "Missing booking details." });
             return;
         }
@@ -89,14 +95,36 @@ function CheckoutContent() {
         const advanceAmount = totalCost * 0.20;
 
         try {
-            const orderResponse = await apiService.post('/bookings/create-order', {
+            console.log('Initiating payment request...');
+            
+            // FIXED: Changed from '/bookings/create-order' to '/bookings/create-order'
+            // Since apiService already has '/api' in baseURL, we don't need it here
+            const orderResponse = await apiService.post('/api/bookings/create-order', {
                 amount: advanceAmount,
                 receipt: `receipt_tour_${Date.now()}`
             });
+            
+            console.log('Order Response:', orderResponse);
+            
+            // The response structure from apiService is already unwrapped
+            // So orderResponse.data contains your actual data
             const order = orderResponse.data;
 
+            if (!order || !order.id) {
+                toast({ 
+                    variant: "destructive", 
+                    title: "Payment Error", 
+                    description: "Invalid order response from server." 
+                });
+                return;
+            }
+
             if (!window.Razorpay) {
-                toast({ variant: "destructive", title: "Payment Error", description: "Payment gateway script not loaded." });
+                toast({ 
+                    variant: "destructive", 
+                    title: "Payment Error", 
+                    description: "Payment gateway script not loaded." 
+                });
                 return;
             }
 
@@ -108,14 +136,15 @@ function CheckoutContent() {
                 description: `Advance for ${tour.title}`,
                 order_id: order.id,
                 handler: function (response: any) {
+                    console.log('Payment successful:', response);
                     dispatch(verifyPaymentAndCreateBooking({
                         razorpay_order_id: response.razorpay_order_id,
                         razorpay_payment_id: response.razorpay_payment_id,
                         razorpay_signature: response.razorpay_signature,
-                        tourId,
-                        guideId,
-                        startDate,
-                        endDate,
+                        tourId: tourId!,
+                        guideId: guideId!,
+                        startDate: startDate!,
+                        endDate: endDate!,
                         numberOfTourists: touristsCount,
                     }));
                 },
@@ -136,13 +165,19 @@ function CheckoutContent() {
             paymentObject.open();
 
         } catch (err: any) {
-            toast({ variant: "destructive", title: "Payment Error", description: err.message || "Could not initiate payment." });
+            console.error('Payment Error:', err);
+            toast({ 
+                variant: "destructive", 
+                title: "Payment Error", 
+                description: err.message || "Could not initiate payment." 
+            });
         }
     };
 
+    // --- RENDER LOGIC ---
+
     // 5. Loading State UI
-    const isLoadingData = (packagesLoading === 'pending' && !tour) || (guidesLoading && !guide);
-    if (isLoadingData) {
+    if ((!tour && packagesLoading === 'pending') || (!guide && guidesLoading)) {
         return (
             <div className="flex justify-center items-center py-40">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -151,17 +186,35 @@ function CheckoutContent() {
         );
     }
 
-    // 6. Error State UI (runs after loading is finished)
-    if (!tour || !guide || !startDate || !endDate || !numberOfTourists) {
+    // 6. Invalid URL Check
+    if (!tourId || !guideId || !startDate || !endDate || !numberOfTourists) {
+        return (
+            <div className="text-center py-20">
+                <h1 className="text-2xl font-bold text-destructive">Invalid Booking URL</h1>
+                <p className="text-muted-foreground">Missing required parameters. Please start your booking from the tours page.</p>
+                <Button onClick={() => router.push('/tours')} className="mt-4">
+                    Browse Tours
+                </Button>
+            </div>
+        );
+    }
+
+    // 7. Data Not Found Error
+    if (!tour || !guide) {
         return (
             <div className="text-center py-20">
                 <h1 className="text-2xl font-bold text-destructive">Booking Information Missing</h1>
-                <p className="text-muted-foreground">Could not load details. Please go back and select a guide again.</p>
+                <p className="text-muted-foreground mb-4">
+                    Could not find the {!tour ? 'tour' : 'guide'} details. Please go back and try again.
+                </p>
+                <Button onClick={() => router.push('/tours')} className="mt-4">
+                    Browse Tours
+                </Button>
             </div>
         );
     }
     
-    // 7. Render final component if all data is present
+    // 8. Render final component if all data is present
     const touristsCount = parseInt(numberOfTourists);
     const totalCost = tour.price * touristsCount;
     const advanceAmount = totalCost * 0.20;
@@ -225,7 +278,12 @@ export default function CheckoutPage() {
     return (
         <div className="min-h-screen bg-background pt-20">
             <div className="container max-w-5xl mx-auto px-4 py-12">
-                <Suspense fallback={<div>Loading Checkout...</div>}>
+                <Suspense fallback={
+                    <div className="flex justify-center items-center py-40">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <p className="ml-4 text-muted-foreground text-lg">Loading checkout...</p>
+                    </div>
+                }>
                     <CheckoutContent />
                 </Suspense>
             </div>

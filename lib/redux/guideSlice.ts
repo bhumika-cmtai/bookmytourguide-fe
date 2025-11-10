@@ -1,6 +1,6 @@
 // lib/redux/guides/guide.slice.ts
 import { createSlice } from "@reduxjs/toolkit";
-import { GuideState } from "@/lib/data";
+import { GuideState, GuideProfile } from "@/lib/data"; // Assuming GuideProfile is the type
 import {
   getMyGuideProfile,
   updateMyGuideProfile,
@@ -10,7 +10,6 @@ import {
   deleteGuide,
   updateMyAvailability
 } from "@/lib/redux/thunks/guide/guideThunk";
-import { verifyPayment } from "@/lib/redux/thunks/admin/subscriptionThunks";
 
 const initialState: GuideState = {
   guides: [],
@@ -43,50 +42,60 @@ const guideSlice = createSlice({
       state.error = action.payload as string;
     };
 
-    // Handle Get My Profile
     builder
+      // Handle Get My Profile
       .addCase(getMyGuideProfile.pending, setPending)
       .addCase(getMyGuideProfile.fulfilled, (state, action) => {
         state.loading = false;
         state.myProfile = action.payload;
       })
-      .addCase(getMyGuideProfile.rejected, setRejected);
+      .addCase(getMyGuideProfile.rejected, setRejected)
 
-    // Handle Update My Profile
-    builder
+      // Handle Update My Profile
       .addCase(updateMyGuideProfile.pending, setPending)
       .addCase(updateMyGuideProfile.fulfilled, (state, action) => {
         state.loading = false;
         state.myProfile = action.payload;
       })
-      .addCase(updateMyGuideProfile.rejected, setRejected);
+      .addCase(updateMyGuideProfile.rejected, setRejected)
       
-
-    // Handle Get All Guides
-    builder
+      // Handle Get All Guides
       .addCase(getAllGuides.pending, setPending)
       .addCase(getAllGuides.fulfilled, (state, action) => {
         state.loading = false;
-        state.guides = action.payload.data;
+        // This thunk replaces the entire guides array
+        state.guides = action.payload.data; 
         state.pagination = {
           total: action.payload.total,
           page: action.payload.page,
           totalPages: action.payload.totalPages,
         };
       })
-      .addCase(getAllGuides.rejected, setRejected);
+      .addCase(getAllGuides.rejected, setRejected)
 
-    // Handle Get Guide By ID
-    builder
+      // Handle Get Guide By ID --- THIS IS THE CORRECTED BLOCK ---
       .addCase(getGuideById.pending, setPending)
       .addCase(getGuideById.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentGuide = action.payload;
-      })
-      .addCase(getGuideById.rejected, setRejected);
+        const fetchedGuide = action.payload as GuideProfile; // The payload IS the guide object
 
-    // Handle Toggle Approval
-    builder
+        // 1. Set currentGuide (keeps original functionality)
+        state.currentGuide = fetchedGuide;
+
+        // 2. IMPORTANT: Add the guide to the 'guides' array so the checkout page can find it.
+        const existingGuideIndex = state.guides.findIndex(g => g._id === fetchedGuide._id);
+
+        if (existingGuideIndex === -1) {
+          // If it doesn't exist, add it.
+          state.guides.push(fetchedGuide);
+        } else {
+          // If it exists (e.g., from a previous getAllGuides call), update it with the fresh data.
+          state.guides[existingGuideIndex] = fetchedGuide;
+        }
+      })
+      .addCase(getGuideById.rejected, setRejected)
+
+      // Handle Toggle Approval
       .addCase(toggleGuideApproval.pending, setPending)
       .addCase(toggleGuideApproval.fulfilled, (state, action) => {
         state.loading = false;
@@ -96,23 +105,21 @@ const guideSlice = createSlice({
           state.currentGuide = action.payload;
         }
       })
-      .addCase(toggleGuideApproval.rejected, setRejected);
+      .addCase(toggleGuideApproval.rejected, setRejected)
 
-    // Handle Delete Guide
-    builder
+      // Handle Delete Guide
       .addCase(deleteGuide.pending, setPending)
       .addCase(deleteGuide.fulfilled, (state, action) => {
         state.loading = false;
         state.guides = state.guides.filter((g) => g._id !== action.payload);
         state.pagination.total = Math.max(0, state.pagination.total - 1);
       })
-      .addCase(deleteGuide.rejected, setRejected);
+      .addCase(deleteGuide.rejected, setRejected)
 
-      builder
+      // Handle Update Availability
       .addCase(updateMyAvailability.pending, setPending)
       .addCase(updateMyAvailability.fulfilled, (state, action) => {
         state.loading = false;
-        // Update the profile with the data returned from the API
         if (state.myProfile) {
           state.myProfile = action.payload;
         }
