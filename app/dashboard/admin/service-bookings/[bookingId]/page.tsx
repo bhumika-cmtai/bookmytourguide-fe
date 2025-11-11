@@ -1,137 +1,241 @@
 // app/dashboard/admin/bookings/[bookingId]/page.tsx
 "use client";
 
-import { useState, useMemo } from 'react';
-import { notFound } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { tours, guides, bookings as initialBookings, isDateRangeAvailable } from "@/lib/data";
-import type { Booking, Tour, Guide, BookingStatus } from '@/lib/data';
-import { toast } from 'react-toastify';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { toast } from "react-toastify";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import {
+  fetchBookingById,
+  updateBookingStatus,
+} from "@/lib/redux/thunks/booking/bookingThunks";
+import { getAllGuides } from "@/lib/redux/thunks/guide/guideThunk"; // Maan rahe hain ki yeh thunk aapke paas hai
+import type { Booking, Guide, BookingStatus } from "@/lib/data";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Clock, MapPin, User as UserIcon, Mail, Phone, Calendar, IndianRupee, Shield, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Loader2,
+  AlertCircle,
+  User as UserIcon,
+  Mail,
+  Phone,
+  Calendar,
+  ArrowLeft,
+  Edit,
+} from "lucide-react";
 
-// Helper function
 const getStatusVariant = (status: BookingStatus) => {
-    switch (status) {
-        case "Upcoming": return "default";
-        case "Completed": return "secondary";
-        case "Cancelled": return "destructive";
-        default: return "outline";
-    }
+  switch (status) {
+    case "Upcoming":
+      return "default";
+    case "Completed":
+      return "secondary";
+    case "Cancelled":
+      return "destructive";
+    default:
+      return "outline";
+  }
 };
 
-export default function AdminBookingDetailPage({ params }: { params: { bookingId: string } }) {
-    const [bookings, setBookings] = useState(initialBookings);
-    const booking = bookings.find(b => b._id === params.bookingId);
-    
-    if (!booking) notFound();
+export default function AdminBookingDetailPage() {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+  const params = useParams();
+  const { bookingId } = params;
 
-    const tour = tours.find(t => t._id === booking.tourId);
-    const mainGuide = guides.find(g => g.guideProfileId === booking.guideId);
-    const subGuide = guides.find(g => g.guideProfileId === booking.substituteGuideId);
+  const {
+    currentBooking: booking,
+    loading: bookingLoading,
+    error: bookingError,
+  } = useAppSelector((state) => state.bookings);
+  // Maan rahe hain ki aapke paas guideSlice bhi hai
+  const { guides, loading: guidesLoading } = useAppSelector(
+    (state) => state.guide
+  );
 
-    if (!tour || !mainGuide) notFound();
+  const [newStatus, setNewStatus] = useState<BookingStatus | "">("");
 
-    // --- LOGIC FOR FINDING SUITABLE GUIDES ---
-    const suitableSubstituteGuides = useMemo(() => {
-        const tourDuration = (new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 3600 * 24) + 1;
-        
-        return guides.filter(guide => {
-            // Must not be the main guide
-            if (guide.guideProfileId === mainGuide.guideProfileId) return false;
-            // Check if guide is available for the entire tour duration
-            return isDateRangeAvailable(guide, booking.startDate, tourDuration);
-        });
-    }, [booking, mainGuide]);
+  useEffect(() => {
+    if (bookingId) {
+      dispatch(fetchBookingById(bookingId as string));
+      dispatch(getAllGuides()); // Substitute assign karne ke liye saare guides fetch karein
+    }
+  }, [dispatch, bookingId]);
 
-    const handleAssignSubstitute = (subGuideId: string) => {
-        setBookings(prev => prev.map(b => 
-            b._id === booking._id ? { ...b, substituteGuideId: subGuideId } : b
-        ));
-        toast.success("Substitute guide has been assigned!");
-    };
+  useEffect(() => {
+    if (booking) {
+      setNewStatus(booking.status);
+    }
+  }, [booking]);
 
+  const handleStatusUpdate = () => {
+    if (!newStatus || newStatus === booking?.status) return;
+    dispatch(
+      updateBookingStatus({ bookingId: bookingId as string, status: newStatus })
+    )
+      .unwrap()
+      .then(() => toast.success("Booking status updated successfully!"))
+      .catch((err) => toast.error(err || "Failed to update status."));
+  };
+
+  // Yahaan hum check kar rahe hain ki data load ho raha hai ya nahi
+  if (bookingLoading || guidesLoading) {
     return (
-        <div className="min-h-screen bg-muted/50 pt-20">
-            <div className="container max-w-5xl mx-auto px-4 py-12">
-                <Card className="shadow-lg">
-                    <CardHeader className="p-6">
-                        <div className="flex justify-between items-start">
-                            <CardTitle className="text-3xl font-extrabold">Booking Details</CardTitle>
-                            <Badge variant={getStatusVariant(booking.status)} className="text-base">{booking.status}</Badge>
-                        </div>
-                        <CardDescription>Booking ID: {booking._id}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6 grid lg:grid-cols-3 gap-8">
-                        {/* Left Column */}
-                        <div className="lg:col-span-2 space-y-6">
-                            <Card>
-                                <CardHeader><CardTitle>{tour.title}</CardTitle></CardHeader>
-                                <CardContent>
-                                    <p className="flex items-center gap-2"><MapPin className="w-4 h-4"/> {tour.locations.join(', ')}</p>
-                                    <p className="flex items-center gap-2 mt-2"><Calendar className="w-4 h-4"/> {new Date(booking.startDate).toLocaleDateString()} to {new Date(booking.endDate).toLocaleDateString()}</p>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader><CardTitle>Customer Information</CardTitle></CardHeader>
-                                <CardContent>
-                                    <p className="flex items-center gap-2"><UserIcon className="w-4 h-4"/> {booking.userName}</p>
-                                    <p className="flex items-center gap-2 mt-2"><Mail className="w-4 h-4"/> {booking.userEmail}</p>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Right Column */}
-                        <div className="space-y-6">
-                            <Card>
-                                <CardHeader><CardTitle>Guide Roster</CardTitle></CardHeader>
-                                <CardContent className="space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <img src={mainGuide.photo} alt={mainGuide.name} className="w-12 h-12 rounded-full"/>
-                                        <div><p className="font-semibold">{mainGuide.name}</p><p className="text-xs text-muted-foreground">Main Guide</p></div>
-                                    </div>
-                                    <Separator />
-                                    {subGuide ? (
-                                        <div className="flex items-center gap-3">
-                                            <img src={subGuide.photo} alt={subGuide.name} className="w-12 h-12 rounded-full"/>
-                                            <div><p className="font-semibold">{subGuide.name}</p><p className="text-xs text-muted-foreground">Substitute Guide</p></div>
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-center text-muted-foreground py-2">No substitute assigned.</p>
-                                    )}
-
-                                    {booking.status === "Upcoming" && (
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button variant="outline" className="w-full mt-4"><UserPlus className="w-4 h-4 mr-2"/> {subGuide ? "Change Substitute" : "Assign Substitute"}</Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="max-w-2xl">
-                                                <DialogHeader><DialogTitle>Select a Substitute Guide</DialogTitle></DialogHeader>
-                                                <p className="text-sm text-muted-foreground">Showing available guides for the tour period.</p>
-                                                <div className="max-h-[50vh] overflow-y-auto space-y-3 p-1">
-                                                    {suitableSubstituteGuides.map(guide => (
-                                                        <div key={guide._id} className="flex items-center justify-between p-2 border rounded-lg">
-                                                            <div className="flex items-center gap-3">
-                                                                <img src={guide.photo} alt={guide.name} className="w-10 h-10 rounded-full"/>
-                                                                <div><p className="font-semibold">{guide.name}</p><p className="text-xs text-muted-foreground">{guide.specializations.join(', ')}</p></div>
-                                                            </div>
-                                                            <Button size="sm" onClick={() => handleAssignSubstitute(guide.guideProfileId)}>Assign</Button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+      <div className="flex justify-center items-center h-[calc(100vh-80px)]">
+        <Loader2 className="w-16 h-16 animate-spin text-primary" />
+      </div>
     );
+  }
+
+  // Error handling
+  if (bookingError) {
+    return (
+      <div className="text-center py-20">
+        <AlertCircle className="w-16 h-16 mx-auto text-destructive mb-4" />
+        <h2 className="text-2xl font-bold">Error</h2>
+        <p className="text-muted-foreground">{bookingError}</p>
+      </div>
+    );
+  }
+
+  // Agar booking nahi milti hai
+  if (!booking) {
+    return (
+      <div className="text-center py-20">
+        <h2 className="text-2xl font-bold">Booking not found.</h2>
+      </div>
+    );
+  }
+
+  const tour = typeof booking.tour === "object" ? booking.tour : null;
+  const guide = typeof booking.guide === "object" ? booking.guide : null;
+  const user = typeof booking.user === "object" ? booking.user : null;
+
+  return (
+    <div className="max-w-6xl mx-auto p-4 md:p-8">
+      <Button variant="outline" onClick={() => router.back()} className="mb-6">
+        <ArrowLeft className="w-4 h-4 mr-2" /> Back to All Bookings
+      </Button>
+
+      <div className="flex justify-between items-start mb-4">
+        <h1 className="text-3xl md:text-4xl font-extrabold">{tour?.title}</h1>
+        <Badge
+          variant={getStatusVariant(booking.status)}
+          className="text-md px-4 py-2"
+        >
+          {booking.status}
+        </Badge>
+      </div>
+      <p className="text-muted-foreground mb-8">Booking ID: {booking._id}</p>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Update Booking Status</CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center gap-4">
+              <Select
+                value={newStatus}
+                onValueChange={(value) => setNewStatus(value as BookingStatus)}
+              >
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Upcoming">Upcoming</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={handleStatusUpdate}
+                disabled={newStatus === booking.status}
+              >
+                <Edit className="w-4 h-4 mr-2" /> Update Status
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Booking Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 text-lg">
+              <div className="flex items-center gap-3">
+                <Calendar className="w-6 h-6 text-primary" />
+                <p>
+                  <strong>Dates:</strong>{" "}
+                  {new Date(booking.startDate).toLocaleDateString()} to{" "}
+                  {new Date(booking.endDate).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <UserIcon className="w-6 h-6 text-primary" />
+                <p>
+                  <strong>Guests:</strong> {booking.numberOfTourists}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Customer Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="flex items-center gap-3">
+                <UserIcon className="w-5 h-5 text-primary" />{" "}
+                <span className="font-bold">{user?.name}</span>
+              </p>
+              <p className="flex items-center gap-3">
+                <Mail className="w-5 h-5 text-primary" /> {user?.email}
+              </p>
+              {user?.mobile && (
+                <p className="flex items-center gap-3">
+                  <Phone className="w-5 h-5 text-primary" /> {user.mobile}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Assigned Guide</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-center gap-3">
+                <Image
+                  src={guide?.photo || "/placeholder.png"}
+                  alt={guide?.name || "Guide"}
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div>
+                  <p className="font-semibold">{guide?.name}</p>
+                  <p className="text-xs text-muted-foreground">Main Guide</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
 }

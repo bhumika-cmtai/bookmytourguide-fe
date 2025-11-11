@@ -1,3 +1,4 @@
+// components/Sidebar.tsx (assuming this is the location)
 "use client";
 
 import Link from "next/link";
@@ -23,7 +24,7 @@ import {
   Users,
   PersonStanding,
   Languages,
-  Podcast
+  Podcast,
 } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
 
@@ -31,35 +32,88 @@ import { useAuth } from "@/lib/hooks/useAuth";
 const adminNavigation = [
   { name: "Dashboard", href: "/dashboard/admin", icon: LayoutGrid },
   { name: "Package", href: "/dashboard/admin/package", icon: Globe2 },
-  // { name: "Addons Package", href: "/dashboard/admin/addon-package", icon: Map },
   { name: "Locations", href: "/dashboard/admin/locations", icon: Map },
   { name: "Languages", href: "/dashboard/admin/languages", icon: Languages },
   { name: "User", href: "/dashboard/admin/users", icon: User },
   { name: "Guide", href: "/dashboard/admin/guides", icon: Users },
-  { name: "Subscription", href: "/dashboard/admin/subscriptions", icon: Podcast },
-  { name: "Service Booking", href: "/dashboard/admin/service-bookings", icon: BookOpen },
-  { name: "Tour Guide Booking", href: "/dashboard/admin/tourguide-bookings", icon: BookOpen },
-  { name: "User's requests", href: "/dashboard/admin/custom-booking", icon: UserRoundPlus },
-  { name: "Testimonials", href: "/dashboard/admin/testimonial", icon: MessageSquare },
+  {
+    name: "Subscription",
+    href: "/dashboard/admin/subscriptions",
+    icon: Podcast,
+  },
+  {
+    name: "Service Booking",
+    href: "/dashboard/admin/service-bookings",
+    icon: BookOpen,
+  },
+  {
+    name: "Tour Guide Booking",
+    href: "/dashboard/admin/tourguide-bookings",
+    icon: BookOpen,
+  },
+  {
+    name: "User's requests",
+    href: "/dashboard/admin/custom-booking",
+    icon: UserRoundPlus,
+  },
+  {
+    name: "Testimonials",
+    href: "/dashboard/admin/testimonial",
+    icon: MessageSquare,
+  },
 ];
 
 const guideNavigation = [
   { name: "Dashboard", href: "/dashboard/guide", icon: LayoutGrid },
   { name: "Edit Profile", href: "/dashboard/guide/profile", icon: UserCircle },
   { name: "Current Tours", href: "/dashboard/guide/current-tours", icon: Bus },
-  { name: "Previous Tours", href: "/dashboard/guide/previous-tours", icon: BusFront },
-  { name: "Upcomming Tours", href: "/dashboard/guide/upcomming-tours", icon: Binoculars },
-  { name: "Substitute Tours", href: "/dashboard/guide/substitute-tours", icon: UserRoundPlus },
-  { name: "Set Availability", href: "/dashboard/guide/availability", icon: Calendar },
-  { name: "Subscription", href: "/dashboard/guide/buy-subscription", icon: Banknote },
+  {
+    name: "Upcoming Tours",
+    href: "/dashboard/guide/upcoming-tours",
+    icon: Binoculars,
+  },
+  {
+    name: "Previous Tours",
+    href: "/dashboard/guide/previous-tours",
+    icon: BusFront,
+  },
+  // --- YEH LINE THEEK KI GAYI HAI ---
+  {
+    name: "All My Bookings",
+    href: "/dashboard/guide/all-bookings",
+    icon: BookOpen,
+  },
+  {
+    name: "Substitute Tours",
+    href: "/dashboard/guide/substitute-tours",
+    icon: UserRoundPlus,
+  },
+  {
+    name: "Set Availability",
+    href: "/dashboard/guide/availability",
+    icon: Calendar,
+  },
+  {
+    name: "Subscription",
+    href: "/dashboard/guide/buy-subscription",
+    icon: Banknote,
+  },
 ];
 
 const userNavigation = [
   { name: "Dashboard", href: "/dashboard/user", icon: LayoutGrid },
   { name: "Find a Guide", href: "/find-guides", icon: PersonStanding },
   { name: "Explore Our packages", href: "/tours", icon: PlaneLanding },
-  { name: "Plan Your Tour", href: "/dashboard/user/custom-tour", icon: Binoculars },
-  { name: "Your Planned Tours", href: "/dashboard/user/planned-tours", icon: TramFront },
+  {
+    name: "Plan Your Tour",
+    href: "/dashboard/user/custom-tour",
+    icon: Binoculars,
+  },
+  {
+    name: "Your Planned Tours",
+    href: "/dashboard/user/planned-tours",
+    icon: TramFront,
+  },
   { name: "My Bookings", href: "/dashboard/user/my-bookings", icon: BookOpen },
 ];
 
@@ -68,7 +122,7 @@ const roleNavigations = {
   admin: adminNavigation,
   guide: guideNavigation,
   user: userNavigation,
-  manager: adminNavigation, // Assuming manager has same access as admin
+  manager: adminNavigation,
 };
 
 export default function Sidebar({
@@ -82,7 +136,7 @@ export default function Sidebar({
 }) {
   const pathname = usePathname();
   const { logout } = useAuth();
-  const navigation = roleNavigations[userRole] || userNavigation; // Default to user nav
+  const navigation = roleNavigations[userRole] || userNavigation;
 
   const handleLinkClick = (href: string) => {
     if (href === "/logout") {
@@ -95,7 +149,6 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Mobile Overlay */}
       <div
         className={`fixed inset-0 bg-black/60 lg:hidden z-40 transition-opacity ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
