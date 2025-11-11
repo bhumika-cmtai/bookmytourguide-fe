@@ -1,25 +1,20 @@
 "use client";
-
 import React, { useEffect, useState, useCallback, useRef, memo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import useEmblaCarousel from "embla-carousel-react";
-
 // Redux imports (adjust path if needed)
 import { AppDispatch, RootState } from "@/lib/store";
 import { fetchTestimonials } from "@/lib/redux/testimonialSlice";
-
 // UI and Animation imports
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Star, Quote, User, Play, Pause, ArrowLeft, ArrowRight, Loader } from "lucide-react";
 import { staggerContainer, fadeInUp } from "@/lib/motion-variants";
-
 // --- Main Testimonials Component ---
 export function Testimonials() {
   const dispatch: AppDispatch = useDispatch();
   const { testimonials, loading, error, total } = useSelector((state: RootState) => state.testimonials);
-
   // --- Embla Carousel Hook ---
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     loop: true, 
@@ -29,24 +24,20 @@ export function Testimonials() {
   });
   const [prevBtnEnabled, setPrevBtnEnabled] = useState(false);
   const [nextBtnEnabled, setNextBtnEnabled] = useState(false);
-
   // Navigation callback functions
   const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
-
   // Update button states when a new slide is selected
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
     setPrevBtnEnabled(emblaApi.canScrollPrev());
     setNextBtnEnabled(emblaApi.canScrollNext());
   }, [emblaApi]);
-
   // Effect to fetch data and initialize carousel
   useEffect(() => {
     // Fetch testimonials on component mount
     dispatch(fetchTestimonials({ limit: 10, visible: true }));
   }, [dispatch]);
-
   useEffect(() => {
     if (!emblaApi) return;
     onSelect();
@@ -58,11 +49,9 @@ export function Testimonials() {
       emblaApi.off("reInit", onSelect);
     };
   }, [emblaApi, onSelect]);
-  
   const averageRating = testimonials.length > 0 
     ? (testimonials.reduce((acc, t) => acc + (t.rating || 0), 0) / testimonials.length).toFixed(1) 
     : "0.0";
-
   return (
     <section className="py-20 bg-background relative overflow-hidden">
       <div className="container max-w-7xl mx-auto px-4">
@@ -76,7 +65,6 @@ export function Testimonials() {
               Real stories from travelers who explored India with our expert guides.
             </p>
           </motion.div>
-
           {/* --- SLIDER SECTION --- */}
           <motion.div variants={fadeInUp} className="relative">
             {loading && (
@@ -90,7 +78,6 @@ export function Testimonials() {
                 <p>Error: {error}</p>
               </div>
             )}
-            
             {!loading && !error && testimonials.length === 0 && (
               <div className="text-center h-96 flex items-center justify-center text-muted-foreground">
                 <p>No testimonials available at the moment.</p>
@@ -112,7 +99,6 @@ export function Testimonials() {
                 </div>
               </div>
             )}
-
             {/* Navigation Buttons */}
             {!loading && testimonials.length > 2 && (
               <>
@@ -137,7 +123,6 @@ export function Testimonials() {
               </>
             )}
           </motion.div>
-          
           {/* Statistics Section */}
           <motion.div variants={fadeInUp} className="mt-20 pt-16 border-t border-border">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -166,14 +151,11 @@ export function Testimonials() {
     </section>
   );
 }
-
-
 // --- FIXED: Video Slide Component (Memoized to prevent re-renders) ---
 const VideoSlide = memo(function VideoSlide({ testimonial }: { testimonial: any }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasError, setHasError] = useState(false);
-
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -187,8 +169,6 @@ const VideoSlide = memo(function VideoSlide({ testimonial }: { testimonial: any 
       video.pause();
     }
   }, []);
-  
-  // Update isPlaying state based on video events
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -210,7 +190,6 @@ const VideoSlide = memo(function VideoSlide({ testimonial }: { testimonial: any 
       video.removeEventListener("error", onError);
     };
   }, []);
-
   if (hasError) {
     return (
       <Card className="w-full aspect-video rounded-2xl overflow-hidden relative bg-muted flex items-center justify-center">
@@ -221,7 +200,6 @@ const VideoSlide = memo(function VideoSlide({ testimonial }: { testimonial: any 
       </Card>
     );
   }
-
   return (
     <Card className="w-full aspect-video rounded-2xl overflow-hidden relative group">
       <video
@@ -233,8 +211,7 @@ const VideoSlide = memo(function VideoSlide({ testimonial }: { testimonial: any 
         preload="metadata"
         className="w-full h-full object-cover"
         onClick={togglePlay}
-      />
-      
+      /> 
       {/* Play/Pause Button Overlay */}
       <div 
         className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-300 cursor-pointer ${
