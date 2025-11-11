@@ -62,20 +62,14 @@ export function Header() {
     { href: "/contact", label: "Contact", icon: Mail },
   ];
 
-  // Check for user session on component mount
+  // FIX: This useEffect now correctly checks for an existing session without causing a loop.
   useEffect(() => {
-    const checkAuth = async () => {
-      if (!isAuthenticated && !loading) {
-        try {
-          await fetchCurrentUser();
-        } catch (error) {
-          // User not authenticated, ignore error
-        }
-      }
-    };
-
-    checkAuth();
-  }, [isAuthenticated, loading, fetchCurrentUser]);
+    // If the user state is not authenticated, attempt to fetch the user.
+    // This is for checking if a session exists from a cookie on initial page load.
+    if (!isAuthenticated) {
+      fetchCurrentUser();
+    }
+  }, [isAuthenticated, fetchCurrentUser]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -134,6 +128,7 @@ export function Header() {
 
   const isActive = (href: string) => pathname === href;
 
+  // The rest of the component remains the same...
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
       <div className="container max-w-7xl mx-auto px-4">

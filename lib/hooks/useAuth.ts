@@ -1,4 +1,3 @@
-// lib/hooks/useAuth.ts
 "use client";
 
 import { useDispatch, useSelector } from "react-redux";
@@ -17,6 +16,7 @@ import {
 } from "@/lib/redux/authSlice";
 import { LoginRequest, OTPRequest, User } from "@/types/auth";
 import { showToast } from "@/lib/utils/toastHelper";
+import { useCallback } from "react"; // Import useCallback
 
 const ROLE_ROUTES: Record<string, string> = {
   guide: "/dashboard/guide",
@@ -32,7 +32,7 @@ export const useAuth = () => {
     (state: RootState) => state.auth
   );
 
-  const login = async (credentials: LoginRequest) => {
+  const login = useCallback(async (credentials: LoginRequest) => {
     const result = await dispatch(loginUser(credentials));
     if (loginUser.fulfilled.match(result)) {
       const role = result.payload.data?.role ?? "user";
@@ -44,9 +44,9 @@ export const useAuth = () => {
       showToast.error((result.payload as string) || "Login failed");
     }
     return result;
-  };
+  }, [dispatch, router]);
 
-  const sendOtp = async (data: OTPRequest) => {
+  const sendOtp = useCallback(async (data: OTPRequest) => {
     const result = await dispatch(sendOTP(data));
     if (sendOTP.fulfilled.match(result)) {
       showToast.success("OTP sent successfully to your email!");
@@ -54,9 +54,9 @@ export const useAuth = () => {
       showToast.error((result.payload as string) || "Failed to send OTP");
     }
     return result;
-  };
+  }, [dispatch]);
 
-  const verifyAndRegister = async (formData: FormData) => {
+  const verifyAndRegister = useCallback(async (formData: FormData) => {
     const result = await dispatch(verifyOtpAndRegister(formData));
     if (verifyOtpAndRegister.fulfilled.match(result)) {
       showToast.success("Registration successful! Please login to continue.");
@@ -64,33 +64,23 @@ export const useAuth = () => {
       showToast.error((result.payload as string) || "Registration failed");
     }
     return result;
-  };
+  }, [dispatch]);
 
-  const fetchCurrentUser = async () => {
-    const result = await dispatch(getCurrentUser());
-    if (getCurrentUser.rejected.match(result)) {
-      // Only redirect to login if we're not already on auth pages
-      if (
-        typeof window !== "undefined" &&
-        !window.location.pathname.includes("/login") &&
-        !window.location.pathname.includes("/register")
-      ) {
-        router.push("/login");
-      }
-    }
-    return result;
-  };
+  const fetchCurrentUser = useCallback(async () => {
+    // This function should only fetch the user, not handle redirects.
+    // Page-level protection should handle redirects.
+    return dispatch(getCurrentUser());
+  }, [dispatch]);
 
-  const refresh = async () => {
-    const result = await dispatch(refreshToken());
-    return result;
-  };
+  const refresh = useCallback(async () => {
+    return dispatch(refreshToken());
+  }, [dispatch]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await dispatch(logoutUser());
     showToast.info("Logged out successfully. See you soon!");
     router.push("/login");
-  };
+  }, [dispatch, router]);
 
   return {
     user,
