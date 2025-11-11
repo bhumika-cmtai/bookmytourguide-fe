@@ -1,17 +1,21 @@
-// app/dashboard/user/my-bookings/page.tsx
 "use client";
 
 import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { toast } from "react-toastify";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { fetchMyBookings } from "@/lib/redux/thunks/booking/bookingThunks";
+import {
+  fetchMyBookings,
+  cancelAndRefundBooking,
+} from "@/lib/redux/thunks/booking/bookingThunks";
 import { Button } from "@/components/ui/button";
 import {
   Ticket,
   Calendar,
   MapPin,
   User as UserIcon,
+  Undo2,
   Loader2,
   AlertCircle,
 } from "lucide-react";
@@ -19,7 +23,13 @@ import type { Booking, BookingStatus } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
-function MyBookingCard({ booking }: { booking: Booking }) {
+function MyBookingCard({
+  booking,
+  onCancel,
+}: {
+  booking: Booking;
+  onCancel: (bookingId: string, tourTitle: string) => void;
+}) {
   const tour =
     booking.tour && typeof booking.tour === "object" ? booking.tour : null;
   const guide =
@@ -30,13 +40,13 @@ function MyBookingCard({ booking }: { booking: Booking }) {
   const getStatusVariant = (status: BookingStatus) => {
     switch (status) {
       case "Upcoming":
-        return "destructive";
+        return "default"; // Upcoming is the default/active state
       case "Completed":
         return "secondary";
       case "Cancelled":
-        return "outline";
+        return "destructive"; // Cancelled is a destructive state
       default:
-        return "default";
+        return "outline";
     }
   };
 
@@ -96,11 +106,22 @@ function MyBookingCard({ booking }: { booking: Booking }) {
             <p className="text-3xl font-extrabold text-primary">
               ₹{booking.totalPrice.toLocaleString()}
             </p>
-            <Button asChild variant="outline">
-              <Link href={`/dashboard/user/my-bookings/${booking._id}`}>
-                View Tour Details
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              {booking.status === "Upcoming" && (
+                <Button
+                  variant="destructive"
+                  onClick={() => onCancel(booking._id, tour.title)}
+                >
+                  <Undo2 className="w-4 h-4 mr-2" />
+                  Cancel & Refund
+                </Button>
+              )}
+              <Button asChild variant="outline">
+                <Link href={`/dashboard/user/my-bookings/${booking._id}`}>
+                  View Tour Details
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -117,6 +138,23 @@ export default function MyBookingsPage() {
   useEffect(() => {
     dispatch(fetchMyBookings());
   }, [dispatch]);
+
+  const handleCancel = (bookingId: string, tourTitle: string) => {
+    if (
+      confirm(
+        `Are you sure you want to cancel your booking for "${tourTitle}"? Your advance payment will be refunded.`
+      )
+    ) {
+      dispatch(cancelAndRefundBooking(bookingId))
+        .unwrap()
+        .then(() => {
+          toast.success("Booking cancelled! Refund has been initiated.");
+        })
+        .catch((err) => {
+          toast.error(err || "Failed to cancel booking.");
+        });
+    }
+  };
 
   const renderContent = () => {
     if (loading) {
@@ -152,12 +190,13 @@ export default function MyBookingsPage() {
       });
 
       if (validBookings.length === 0) {
+        // This case handles if data is malformed but exists
         return (
           <div className="text-center py-16 px-6 bg-card rounded-xl border">
-            <AlertCircle className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
-            <h2 className="text-3xl font-bold mb-2">Incomplete Booking Data</h2>
+            <Ticket className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-3xl font-bold mb-2">No Journeys Yet</h2>
             <p className="text-muted-foreground text-lg mb-6">
-              Some bookings have missing tour or guide information.
+              You haven't booked any tours.
             </p>
             <Button
               size="lg"
@@ -173,7 +212,11 @@ export default function MyBookingsPage() {
       return (
         <div className="space-y-8">
           {validBookings.map((booking) => (
-            <MyBookingCard key={booking._id} booking={booking} />
+            <MyBookingCard
+              key={booking._id}
+              booking={booking}
+              onCancel={handleCancel}
+            />
           ))}
         </div>
       );

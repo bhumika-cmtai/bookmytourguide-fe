@@ -2,6 +2,48 @@
 
 // --- Populated Object Interfaces ---
 // Yeh batata hai ki jab data populate hoke aayega to kaisa dikhega
+export interface tourGuideBooking {
+  _id: string;
+  // Guide aur User ya to simple ID (string) ho sakte hain, ya poora object.
+  guide: string | PopulatedGuide;
+  user: string | PopulatedUser;
+
+  // Tour Details
+  location: string; // ✅ FIXED: 'location' property added
+  language: string;
+  startDate: string; // Dates from APIs are typically strings
+  endDate: string;
+  numberOfTravelers: number;
+
+  // Financials
+  totalPrice: number;
+  advanceAmount: number;
+  remainingAmount: number;
+  paymentStatus: "Advance Paid" | "Fully Paid" | "Refunded";
+
+  // Payment IDs
+  razorpayOrderId: string;
+  razorpayPaymentId?: string;
+  finalPaymentRazorpayOrderId?: string;
+  finalPaymentRazorpayPaymentId?: string;
+
+  // Contact Info
+  contactInfo: {
+    fullName: string;
+    email: string;
+    phone: string;
+  };
+
+  // Status and Cancellation
+  status: "Upcoming" | "Completed" | "Cancelled";
+  cancelledBy?: "User" | "Admin";
+  cancellationReason?: string;
+  razorpayRefundId?: string;
+
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface PopulatedUser {
   _id: string;

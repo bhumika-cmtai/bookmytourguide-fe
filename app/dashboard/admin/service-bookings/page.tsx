@@ -1,4 +1,3 @@
-// app/dashboard/admin/bookings/page.tsx
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -8,6 +7,7 @@ import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
   fetchAllBookings,
   deleteBooking,
+  cancelAndRefundBooking,
 } from "@/lib/redux/thunks/booking/bookingThunks";
 import type { Booking, BookingStatus } from "@/lib/data";
 import {
@@ -16,6 +16,7 @@ import {
   Eye,
   Ticket,
   Trash2,
+  Undo2,
   Loader2,
   AlertCircle,
 } from "lucide-react";
@@ -79,6 +80,23 @@ export default function AllBookingsPage() {
       });
   }, [bookings, searchTerm, statusFilter]);
 
+  const handleCancel = (bookingId: string, tourTitle: string) => {
+    if (
+      confirm(
+        `Are you sure you want to cancel the booking for "${tourTitle}"? The advance amount will be refunded.`
+      )
+    ) {
+      dispatch(cancelAndRefundBooking(bookingId))
+        .unwrap()
+        .then(() =>
+          toast.success("Booking cancelled and refund initiated successfully!")
+        )
+        .catch((err) =>
+          toast.error(err || "Failed to cancel and refund booking.")
+        );
+    }
+  };
+
   const handleDelete = (bookingId: string, tourTitle: string) => {
     if (
       confirm(`Are you sure you want to delete the booking for "${tourTitle}"?`)
@@ -91,7 +109,7 @@ export default function AllBookingsPage() {
   };
 
   const renderContent = () => {
-    if (loading) {
+    if (loading && bookings.length === 0) {
       return (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
@@ -192,6 +210,21 @@ export default function AllBookingsPage() {
                                 <Eye className="w-4 h-4 mr-1" /> View
                               </Link>
                             </Button>
+                            {booking.status === "Upcoming" && (
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() =>
+                                  handleCancel(
+                                    booking._id,
+                                    tour?.title || "this tour"
+                                  )
+                                }
+                              >
+                                <Undo2 className="w-4 h-4 mr-1" /> Cancel &
+                                Refund
+                              </Button>
+                            )}
                             <Button
                               variant="destructive"
                               size="sm"

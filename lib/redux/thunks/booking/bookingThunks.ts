@@ -1,5 +1,3 @@
-// lib/redux/thunks/booking/bookingThunks.ts
-
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { apiService } from "@/lib/service/api";
 import {
@@ -7,8 +5,6 @@ import {
   CreateRazorpayOrderData,
   UpdateBookingStatusData,
 } from "@/lib/data";
-
-// --- INTERFACES FOR THUNK PAYLOADS ---
 
 interface CreateBookingData {
   tourId: string;
@@ -30,7 +26,10 @@ interface VerifyPaymentData {
   numberOfTourists: number;
 }
 
-// --- ASYNC THUNKS ---
+interface AssignSubstituteData {
+  bookingId: string;
+  substituteGuideId: string;
+}
 
 export const createRazorpayOrder = createAsyncThunk<
   any,
@@ -41,7 +40,7 @@ export const createRazorpayOrder = createAsyncThunk<
       `/api/bookings/create-order`,
       orderData
     );
-    return response.data.data;
+    return response.data;
   } catch (error: any) {
     return rejectWithValue(
       error.response?.data?.message || "Failed to create Razorpay order"
@@ -58,7 +57,7 @@ export const verifyPaymentAndCreateBooking = createAsyncThunk<
       "/api/bookings/verify",
       verificationData
     );
-    return response.data.data;
+    return response.data;
   } catch (error: any) {
     return rejectWithValue(
       error.response?.data?.message || "Payment verification failed"
@@ -74,7 +73,7 @@ export const createBooking = createAsyncThunk<Booking, CreateBookingData>(
         "/api/bookings/create",
         bookingData
       );
-      return response.data.data;
+      return response.data;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to create booking"
@@ -87,10 +86,8 @@ export const fetchAllBookings = createAsyncThunk<Booking[]>(
   "bookings/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await apiService.get<{ data: Booking[] }>(
-        "/api/bookings"
-      );
-      return response.data.data || [];
+      const response = await apiService.get<Booking[]>("/api/bookings");
+      return response.data || [];
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch bookings"
@@ -103,10 +100,10 @@ export const fetchMyBookings = createAsyncThunk<Booking[]>(
   "bookings/fetchMy",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await apiService.get<{ data: Booking[] }>(
+      const response = await apiService.get<Booking[]>(
         "/api/bookings/my-bookings"
       );
-      return response.data.data || [];
+      return response.data || [];
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch your bookings"
@@ -119,12 +116,10 @@ export const fetchGuideBookings = createAsyncThunk<Booking[]>(
   "bookings/fetchForGuide",
   async (_, { rejectWithValue }) => {
     try {
-      // --- YEH LINE THEEK KI GAYI HAI ---
-      // Ab hum naye aur sahi endpoint ko call kar rahe hain
-      const response = await apiService.get<{ data: Booking[] }>(
+      const response = await apiService.get<Booking[]>(
         `/api/bookings/guide-bookings`
       );
-      return response.data.data || [];
+      return response.data || [];
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch guide bookings"
@@ -137,10 +132,10 @@ export const fetchBookingById = createAsyncThunk<Booking, string>(
   "bookings/fetchById",
   async (bookingId, { rejectWithValue }) => {
     try {
-      const response = await apiService.get<{ data: Booking }>(
+      const response = await apiService.get<Booking>(
         `/api/bookings/${bookingId}`
       );
-      return response.data.data;
+      return response.data;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch booking details"
@@ -160,10 +155,46 @@ export const updateBookingStatus = createAsyncThunk<
         `/api/bookings/${bookingId}/status`,
         { status }
       );
-      return response.data.data;
+      return response.data;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to update booking status"
+      );
+    }
+  }
+);
+
+export const cancelAndRefundBooking = createAsyncThunk<Booking, string>(
+  "bookings/cancelBooking",
+  async (bookingId, { rejectWithValue }) => {
+    try {
+      const response = await apiService.post<{ data: Booking }>(
+        `/api/bookings/${bookingId}/cancel`
+      );
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to cancel booking"
+      );
+    }
+  }
+);
+
+export const assignSubstituteGuide = createAsyncThunk<
+  Booking,
+  AssignSubstituteData
+>(
+  "bookings/assignSubstitute",
+  async ({ bookingId, substituteGuideId }, { rejectWithValue }) => {
+    try {
+      const response = await apiService.patch<{ data: Booking }>(
+        `/api/bookings/${bookingId}/assign-substitute`,
+        { substituteGuideId }
+      );
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to assign substitute guide"
       );
     }
   }
