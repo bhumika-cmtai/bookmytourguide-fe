@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import "./globals.css";
 import { ReduxProvider } from "@/lib/provider";
 import ToastProvider from "@/lib/ToastProvider";
-import { AuthProvider } from "@/components/auth/AuthProvider";
+// import { AuthProvider } from "@/components/auth/AuthProvider";
 
 export const metadata: Metadata = {
   title: "BookMyTourGuide",
@@ -25,12 +25,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <ReduxProvider>
-          <AuthProvider>
+          {/* <AuthProvider> */}
             <ToastProvider>
               <Suspense fallback={null}>{children}</Suspense>
               <Analytics />
             </ToastProvider>
-          </AuthProvider>
+          {/* </AuthProvider> */}
         </ReduxProvider>
       </body>
     </html>

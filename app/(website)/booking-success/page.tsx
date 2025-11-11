@@ -1,27 +1,66 @@
 "use client"
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { tours, guides } from '@/lib/data';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '@/lib/store';
+import { fetchBookingById } from '@/lib/redux/thunks/booking/bookingThunks';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Calendar, User, ArrowRight } from 'lucide-react';
+import { CheckCircle, Calendar, User, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
 
 function SuccessContent() {
     const searchParams = useSearchParams();
+    const dispatch = useDispatch<AppDispatch>();
     const bookingId = searchParams.get('bookingId');
-    const tourId = searchParams.get('tourId');
-    const guideId = searchParams.get('guideId');
-    const startDate = searchParams.get('startDate');
 
-    const tour = tours.find(t => t._id === tourId);
-    const guide = guides.find(g => g.guideProfileId === guideId);
+    const { currentBooking, loading, error } = useSelector((state: RootState) => state.bookings);
 
-    if (!tour || !guide || !bookingId) {
-        return <div className="text-center text-destructive">Booking details not found. Please check your bookings page.</div>;
+    useEffect(() => {
+        if (bookingId) {
+            // When the component loads, dispatch the thunk to fetch the data
+            dispatch(fetchBookingById(bookingId));
+        }
+    }, [bookingId, dispatch]);
+
+    // 1. Loading State
+    if (loading) {
+        return (
+            <div className="text-center">
+                <Loader2 className="w-16 h-16 mx-auto animate-spin text-primary mb-4" />
+                <p className="text-lg text-muted-foreground">Confirming your booking details...</p>
+            </div>
+        );
     }
+    
+    // 2. Error State
+    if (error) {
+        return (
+            <div className="text-center text-destructive-foreground bg-destructive p-6 rounded-lg">
+                <AlertTriangle className="w-16 h-16 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold">Error Fetching Booking</h2>
+                <p>{error}</p>
+                <Button asChild variant="secondary" className="mt-4">
+                    <Link href="/dashboard/user/my-bookings">Go to My Bookings</Link>
+                </Button>
+            </div>
+        );
+    }
+
+    // 3. Data Not Found State
+    if (!currentBooking) {
+        return (
+            <div className="text-center text-destructive">
+                Booking details could not be found. Please check your bookings page.
+            </div>
+        );
+    }
+
+    // 4. Success State (using live data from currentBooking)
+    const { tour, guide, startDate, _id } = currentBooking;
 
     return (
         <div className="max-w-3xl mx-auto">
@@ -60,7 +99,7 @@ function SuccessContent() {
 
             <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
                 <Button asChild size="lg" className="red-gradient">
-                    <Link href={`/bookings/${bookingId}`}>
+                    <Link href={`/bookings/${_id}`}>
                         View Full Details & Invoice <ArrowRight className="ml-2 w-5 h-5" />
                     </Link>
                 </Button>

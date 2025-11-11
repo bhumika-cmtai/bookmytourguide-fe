@@ -48,3 +48,17 @@ export const verifyPaymentAndCreateBooking = createAsyncThunk<Booking, VerifyPay
       }
     }
   );
+
+
+  export const fetchBookingById = createAsyncThunk<Booking, string>(
+    'bookings/fetchById',
+    async (bookingId, { rejectWithValue }) => {
+      try {
+        // This API call gets the full booking, including populated tour and guide info
+        const response = await apiService.get<{ data: Booking }>(`/api/bookings/${bookingId}`);
+        return response.data;
+      } catch (error: any) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to fetch booking details');
+      }
+    }
+  );

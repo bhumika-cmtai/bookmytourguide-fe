@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Booking } from '@/lib/data';
-import { createBooking,verifyPaymentAndCreateBooking } from '@/lib/redux/thunks/booking/bookingThunks';
+import { createBooking,verifyPaymentAndCreateBooking, fetchBookingById } from '@/lib/redux/thunks/booking/bookingThunks';
 
 interface BookingState {
   bookings: Booking[];
@@ -49,6 +49,19 @@ const bookingSlice = createSlice({
         state.currentBooking = action.payload;
       })
       .addCase(verifyPaymentAndCreateBooking.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(fetchBookingById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.currentBooking = null; // Clear previous booking while fetching
+      })
+      .addCase(fetchBookingById.fulfilled, (state, action: PayloadAction<Booking>) => {
+        state.loading = false;
+        state.currentBooking = action.payload; // Set the fetched booking as the current one
+      })
+      .addCase(fetchBookingById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
