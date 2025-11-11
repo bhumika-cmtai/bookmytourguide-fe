@@ -9,6 +9,7 @@ import languageReducer from "@/lib/redux/languageSlice"
 import subscriptionReducer from "@/lib/redux/subscriptionSlice"
 import contactReducer from "@/lib/redux/contactSlice"
 import bookingReducer from "@/lib/redux/bookingSlice"
+import tourGuideBookingReducer from "@/lib/redux/tourGuideBookingSlice"
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -20,7 +21,8 @@ export const store = configureStore({
     languages: languageReducer,
     subscriptions: subscriptionReducer,
     contacts: contactReducer,
-    bookings: bookingReducer
+    bookings: bookingReducer,
+    tourGuideBooking: tourGuideBookingReducer
 
   },  
 });
