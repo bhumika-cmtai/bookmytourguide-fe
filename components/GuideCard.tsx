@@ -1,4 +1,3 @@
-// components/GuideCard.tsx
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -9,17 +8,18 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, Languages } from "lucide-react";
-// --- CHANGE #1: Use the correct type for guide data from your Redux state ---
 import type { GuideProfile } from "@/lib/data";
 import { Button } from "./ui/button";
 
-// Update the props interface to use the correct type
+// --- FIX #1: Add buttonText to the props interface ---
 interface GuideCardProps {
     guide: GuideProfile;
     checkoutHref: string;
+    buttonText?: string; // Make it optional in case other pages don't provide it
 }
 
-export function GuideCard({ guide, checkoutHref }: GuideCardProps) {
+// --- FIX #2: Destructure buttonText from props and provide a default value ---
+export function GuideCard({ guide, checkoutHref, buttonText = "Select & Continue" }: GuideCardProps) {
   // Determine if the guide has any reviews
   const hasReviews = guide.numReviews && guide.numReviews > 0;
 
@@ -38,12 +38,11 @@ export function GuideCard({ guide, checkoutHref }: GuideCardProps) {
         <div>
           <h3 className="text-xl font-bold text-foreground">{guide.name}</h3>
           
-          {/* --- CHANGE #2: Conditional rendering for reviews --- */}
           <div className="flex items-center gap-2 mt-1">
             {hasReviews ? (
               <>
                 <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                <span className="font-bold text-foreground">{guide.averageRating}</span>
+                <span className="font-bold text-foreground">{guide.averageRating?.toFixed(1)}</span>
                 <span className="text-sm text-muted-foreground">({guide.numReviews} reviews)</span>
               </>
             ) : (
@@ -56,16 +55,13 @@ export function GuideCard({ guide, checkoutHref }: GuideCardProps) {
       <CardContent className="flex-grow p-4 space-y-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <MapPin className="w-4 h-4 text-primary" />
-          {/* Handle cases where state or country might be missing */}
           <span>{guide.state && guide.country ? `${guide.state}, ${guide.country}` : (guide.country || 'Location not set')}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Languages className="w-4 h-4 text-primary" />
-          {/* Safely join languages, providing a fallback */}
           <span>{guide.languages?.join(", ") || "Languages not listed"}</span>
         </div>
         <div className="flex flex-wrap gap-2 mt-2">
-            {/* Safely slice specializations */}
             {guide.specializations?.slice(0, 3).map(spec => (
                 <Badge key={spec} variant="secondary">{spec}</Badge>
             ))}
@@ -73,7 +69,8 @@ export function GuideCard({ guide, checkoutHref }: GuideCardProps) {
       </CardContent>
       <CardFooter className="p-4">
         <Button asChild className="w-full font-bold">
-          <Link href={checkoutHref}>Select & Continue</Link>
+          {/* --- FIX #3: Use the buttonText prop here --- */}
+          <Link href={checkoutHref}>{buttonText}</Link>
         </Button>
       </CardFooter>
     </Card>

@@ -8,7 +8,8 @@ import {
   getGuideById,
   toggleGuideApproval,
   deleteGuide,
-  updateMyAvailability
+  updateMyAvailability,
+  fetchGuidePricingDetails 
 } from "@/lib/redux/thunks/guide/guideThunk";
 
 const initialState: GuideState = {
@@ -17,7 +18,10 @@ const initialState: GuideState = {
   myProfile: null,
   loading: false,
   error: null,
+  pricingDetails: null,
+  pricingLoading: false,
   pagination: { total: 0, page: 1, totalPages: 0 },
+  
 };
 
 const guideSlice = createSlice({
@@ -72,6 +76,18 @@ const guideSlice = createSlice({
         };
       })
       .addCase(getAllGuides.rejected, setRejected)
+      builder
+      .addCase(fetchGuidePricingDetails.pending, (state) => {
+        state.pricingLoading = true;
+      })
+      .addCase(fetchGuidePricingDetails.fulfilled, (state, action) => {
+        state.pricingLoading = false;
+        state.pricingDetails = action.payload;
+      })
+      .addCase(fetchGuidePricingDetails.rejected, (state) => {
+        state.pricingLoading = false;
+        state.pricingDetails = null;
+      })
 
       // Handle Get Guide By ID --- THIS IS THE CORRECTED BLOCK ---
       .addCase(getGuideById.pending, setPending)

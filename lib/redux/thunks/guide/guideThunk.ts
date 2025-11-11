@@ -1,22 +1,18 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { apiService } from "@/lib/service/api";
 import { GuideProfile } from "@/lib/data";
+import { AdminLocation, LanguageOption } from '@/lib/data';
 
-// This helper function remains the same.
 const handleError = (err: any) =>
   err.response?.data?.message || err.message || "An error occurred";
-
-// --- Thunks (Refactored to match locationThunk style) ---
 
 // Get own guide profile
 export const getMyGuideProfile = createAsyncThunk<GuideProfile, void>(
   "guide/getMyProfile",
   async (_, { rejectWithValue }) => {
     try {
-      // Style matched: Explicitly type the expected response data
       const response = await apiService.get<GuideProfile>("/api/guides/profile");
-      // Style matched: Return the 'data' property directly
-      return response.data!; // Using '!' to assert data is not null, as in locationThunk
+      return response.data!;
     } catch (err: any) {
       return rejectWithValue(handleError(err));
     }
@@ -28,7 +24,6 @@ export const updateMyGuideProfile = createAsyncThunk<GuideProfile, FormData>(
   "guide/updateMyProfile",
   async (formData, { rejectWithValue }) => {
     try {
-      // Style matched: Explicitly type the expected response data
       const response = await apiService.put<GuideProfile>(
         "/api/guides/profile/update",
         formData,
@@ -38,7 +33,6 @@ export const updateMyGuideProfile = createAsyncThunk<GuideProfile, FormData>(
           },
         }
       );
-      // Style matched: Return the 'data' property directly
       return response.data!;
     } catch (err: any) {
       return rejectWithValue(handleError(err));
@@ -46,34 +40,30 @@ export const updateMyGuideProfile = createAsyncThunk<GuideProfile, FormData>(
   }
 );
 
-// Get all guides (Admin only)
-// This thunk returns a more complex object for pagination
+// Get all guides
 export const getAllGuides = createAsyncThunk<
   { data: GuideProfile[]; total: number; page: number; totalPages: number },
-  { page?: number; limit?: number; search?: string; approved?: boolean } | undefined
+  { location?: string; language?:string; page?: number; limit?: number; search?: string; approved?: boolean } | undefined
 >("guide/getAllGuides", async (params = {}, { rejectWithValue }) => {
   try {
-    // Style matched: The response itself contains the pagination data alongside the data array
     const response = await apiService.get<{
       data: GuideProfile[];
       total: number;
       page: number;
       totalPages: number;
-    }>("/api/users/guides/all", { params });
+    }>("/api/guides/all", { params });
 
-    // The entire response object matches the expected return type
     return response;
   } catch (err: any) {
     return rejectWithValue(handleError(err));
   }
 });
 
-// Get guide by ID (Admin only)
+// Get guide by ID
 export const getGuideById = createAsyncThunk<GuideProfile, string>(
   "guide/getGuideById",
   async (id, { rejectWithValue }) => {
     try {
-      // Style matched
       const response = await apiService.get<GuideProfile>(`/api/guides/${id}`);
       return response.data!;
     } catch (err: any) {
@@ -82,15 +72,14 @@ export const getGuideById = createAsyncThunk<GuideProfile, string>(
   }
 );
 
-// Toggle guide approval (Admin only)
+// Toggle guide approval
 export const toggleGuideApproval = createAsyncThunk<
   GuideProfile,
   { id: string; isApproved: boolean }
 >("guide/toggleApproval", async ({ id, isApproved }, { rejectWithValue }) => {
   try {
-    // Note: Corrected path to match other guide routes for consistency
     const response = await apiService.patch<GuideProfile>(
-      `/api/guides/${id}/approve`, // Assuming this route exists under /api/guides
+      `/api/guides/${id}/approve`,
       { isApproved }
     );
     return response.data!;
@@ -99,24 +88,23 @@ export const toggleGuideApproval = createAsyncThunk<
   }
 });
 
-// Delete guide (Admin only)
+// Delete guide
 export const deleteGuide = createAsyncThunk<string, string>(
   "guide/deleteGuide",
   async (id, { rejectWithValue }) => {
     try {
-      // Style matched: The API call itself is the action
       await apiService.delete(`/api/guides/${id}`);
-      // On successful deletion, return the ID to the reducer
       return id;
-    } catch (err: any)      {
+    } catch (err: any) {
       return rejectWithValue(handleError(err));
     }
   }
 );
 
+// Update availability
 export const updateMyAvailability = createAsyncThunk<
-  GuideProfile, // Returns the updated guide profile
-  { unavailableDates: string[] } // Accepts an object with the unavailable dates
+  GuideProfile,
+  { unavailableDates: string[] }
 >("guide/updateMyAvailability", async ({ unavailableDates }, { rejectWithValue }) => {
   try {
     const response = await apiService.put<GuideProfile>(
@@ -125,6 +113,41 @@ export const updateMyAvailability = createAsyncThunk<
     );
     return response.data!;
   } catch (err: any) {
+    return rejectWithValue(handleError(err));
+  }
+});
+
+// ✅ FIXED: Fetch guide pricing details
+export const fetchGuidePricingDetails = createAsyncThunk<
+  { locations: AdminLocation[]; languages: LanguageOption[] },
+  string
+>("guide/fetchPricingDetails", async (guideId, { rejectWithValue }) => {
+  try {
+    console.log("🔍 Fetching pricing details for guide:", guideId);
+    
+    // The API interceptor returns response.data from axios
+    // which gives us: { success: true, data: { locations: [...], languages: [...] } }
+    const response = await apiService.get<{
+      data: { locations: AdminLocation[]; languages: LanguageOption[] } 
+    }>(`/api/guides/${guideId}/pricing-details`);
+    
+    console.log("📦 Full response from API:", response);
+    console.log("📊 response.data (the nested data):", response.data);
+    
+    // Access the nested 'data' property which contains locations and languages
+    if (!response.data) {
+      throw new Error("No data received from API");
+    }
+    
+    const pricingData = response.data;
+    
+    console.log("✅ Extracted pricing data:", pricingData);
+    console.log("📍 Locations count:", pricingData.locations?.length || 0);
+    console.log("🗣️ Languages count:", pricingData.languages?.length || 0);
+    
+    return pricingData;
+  } catch (err: any) {
+    console.error("❌ Error fetching pricing details:", err);
     return rejectWithValue(handleError(err));
   }
 });

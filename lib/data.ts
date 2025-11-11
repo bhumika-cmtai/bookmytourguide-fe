@@ -149,6 +149,7 @@ export type Guide = {
     mobile?: string;
     dob?: string;
     state?: string;
+    serviceLocations?:string[];
     country?: string;
     age?: number;
     languages?: string[];
@@ -224,7 +225,6 @@ export type AdminLocation = {
   pricePerPerson: number;
   description: string;
   image: string;
-  addOns: AdminAddOn[];
 };
 
 export type LanguageOption = {
@@ -254,6 +254,7 @@ export interface GuideProfile {
   country?: string;
   age?: number;
   languages?: string[];
+  serviceLocations?:string[];
   experience?: string;
   specializations?: string[];
   availability?: string[];
@@ -279,6 +280,11 @@ export interface GuideState {
   guides: GuideProfile[];
   currentGuide: GuideProfile | null;
   myProfile: GuideProfile | null;
+  pricingDetails: {
+    locations: AdminLocation[];
+    languages: LanguageOption[];
+  } | null;
+  pricingLoading: boolean;
   loading: boolean;
   error: string | null;
   pagination: {
@@ -288,32 +294,45 @@ export interface GuideState {
   };
 }
 
+export interface tourGuideBooking {
+  _id: string;
+  // Guide aur User ya to simple ID (string) ho sakte hain, ya poora object.
+  guide: string | PopulatedGuide;
+  user: string | PopulatedUser;
 
-// --- Mock Data (Kept from your original file) ---
-// Note: This data is not used by the live pages anymore.
+  // Tour Details
+  location: string; // ✅ FIXED: 'location' property added
+  language: string;
+  startDate: string; // Dates from APIs are typically strings
+  endDate: string;
+  numberOfTravelers: number;
 
-export const users: User[] = [
-  { id: 'user-1', name: 'Alice Johnson', email: 'alice.j@example.com', role: 'user' },
-];
+  // Financials
+  totalPrice: number;
+  advanceAmount: number;
+  remainingAmount: number;
+  paymentStatus: "Advance Paid" | "Fully Paid" | "Refunded";
 
-export const tours: Tour[] = [
-  {
-    _id: "tour_06",
-    title: "Classic Golden Triangle",
-    description: "The quintessential Indian journey. Witness the splendor of Delhi, the romance of the Taj Mahal in Agra, and the royal heritage of Jaipur.",
-    images: ["https://images.pexels.com/photos/1603650/pexels-photo-1603650.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"],
-    basePricePerPerson: 10000,
-    pricePerPerson: 8999,
-    duration: "3 Days",
-    locations: ["Delhi", "Agra", "Jaipur"],
-  },
-];
+  // Payment IDs
+  razorpayOrderId: string;
+  razorpayPaymentId?: string;
+  finalPaymentRazorpayOrderId?: string;
+  finalPaymentRazorpayPaymentId?: string;
 
-export const guides: Guide[] = [
-    {
-      _id: "user_guide_01",
-      guideProfileId: "guide_prof_01",
-      name: "Rohan Verma",
-      email: "rohan.v@guidelink.com",
-    },
-];
+  // Contact Info
+  contactInfo: {
+    fullName: string;
+    email: string;
+    phone: string;
+  };
+
+  // Status and Cancellation
+  status: "Upcoming" | "Completed" | "Cancelled";
+  cancelledBy?: "User" | "Admin";
+  cancellationReason?: string;
+  razorpayRefundId?: string;
+
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+}
