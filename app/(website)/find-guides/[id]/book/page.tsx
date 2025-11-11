@@ -1,9 +1,12 @@
-// app/find-guides/[id]/book/page.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { guides, addOnPerks, getAvailableDates } from '@/lib/data';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/lib/store';
+import { getGuideById } from '@/lib/redux/thunks/guide/guideThunk';
+// NOTE: You'll need to create a thunk to fetch add-on perks dynamically in the future.
+import { addOnPerks } from '@/lib/data'; 
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -15,9 +18,12 @@ import { DateRange } from 'react-day-picker';
 import { addDays, format, isBefore } from 'date-fns';
 
 export default function BookGuidePage() {
+  const dispatch: AppDispatch = useDispatch();
   const params = useParams();
   const guideId = Array.isArray(params.id) ? params.id[0] : params.id;
-  const guide = guides.find(g => g.guideProfileId === guideId);
+
+  // Get the specific guide and loading state from the Redux store
+  const { currentGuide: guide, loading } = useSelector((state: RootState) => state.guide);
 
   const [date, setDate] = useState<DateRange | undefined>({
     from: new Date(),
@@ -26,21 +32,49 @@ export default function BookGuidePage() {
   const [numTravelers, setNumTravelers] = useState(1);
   const [selectedPerks, setSelectedPerks] = useState<string[]>([]);
 
-  if (!guide) {
-    notFound();
+  // Fetch the guide's data when the component mounts or if the ID changes
+  useEffect(() => {
+    if (guideId) {
+      // Only fetch if the correct guide isn't already in the state
+      if (!guide || guide._id !== guideId) {
+        dispatch(getGuideById(guideId));
+      }
+    }
+  }, [dispatch, guideId, guide]);
+
+  // --- FIX: ROBUST LOADING STATE ---
+  // The component is considered "loading" if the Redux loading flag is true,
+  // OR if we don't have a guide object yet, OR if the guide in the store
+  // doesn't match the ID from the URL. This prevents the premature 404.
+  if (loading || !guide || guide._id !== guideId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading Guide Details...</p>
+      </div>
+    );
   }
 
-  // Disable dates that are not available for the guide
+  // This check now only runs AFTER the loading is complete.
+  // If the API call finished and we still have no guide, it's a true 404.
+  if (!guide) {
+    return notFound();
+  }
+
+  // Disable dates that are unavailable for the guide
   const disabledDays = (day: Date) => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize today to the start of the day
+    today.setHours(0, 0, 0, 0); // Normalize today
     if (isBefore(day, today)) return true; // Disable past dates
 
-    const dateStr = format(day, 'yyyy-MM-dd');
-    const availableDates = getAvailableDates(guide, "2025-01-01", "2026-12-31"); // Fetch a wide range
-    return !availableDates.includes(dateStr);
+    // Disable dates from the guide's unavailableDates array
+    if (guide.unavailableDates) {
+      return guide.unavailableDates.some(
+        (unavailableDate) => format(new Date(unavailableDate), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+      );
+    }
+    
+    return false;
   };
-
 
   const handlePerkChange = (perkId: string) => {
     setSelectedPerks(prev =>
@@ -55,7 +89,6 @@ export default function BookGuidePage() {
       ? `${format(date.from, "LLL dd, y")} - ${format(date.to, "LLL dd, y")}`
       : format(date.from, "LLL dd, y")
     : "Please select a date range";
-
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
@@ -89,7 +122,7 @@ export default function BookGuidePage() {
                       selected={date}
                       onSelect={setDate}
                       numberOfMonths={2}
-                      disabled={disabledDays} // Disable unavailable dates
+                      disabled={disabledDays}
                     />
                 </div>
                  <p className="text-sm text-muted-foreground mt-2 text-center">Only available dates for {guide.name} are shown. Past dates are disabled.</p>
@@ -108,27 +141,6 @@ export default function BookGuidePage() {
                         min="1"
                     />
                     <Label htmlFor="numTravelers" className="text-md">Person(s)</Label>
-                </div>
-              </div>
-
-              {/* Step 3: Add-On Services */}
-              <div>
-                <h3 className="text-xl font-semibold mb-4 flex items-center"><CheckSquare className="mr-3 h-6 w-6 text-primary" /> Add-On Services & Itinerary</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {addOnPerks.map(perk => (
-                    <div key={perk._id} className="flex items-start space-x-3 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border transition-all hover:border-primary">
-                      <Checkbox
-                        id={perk._id}
-                        checked={selectedPerks.includes(perk._id)}
-                        onCheckedChange={() => handlePerkChange(perk._id)}
-                        className="mt-1"
-                      />
-                      <div className="grid gap-1.5 leading-none">
-                         <label htmlFor={perk._id} className="font-medium cursor-pointer">{perk.title} - (₹{perk.price})</label>
-                         <p className="text-sm text-muted-foreground">{perk.description}</p>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </div>
 
@@ -161,20 +173,20 @@ export default function BookGuidePage() {
           <div className="lg:sticky top-24 self-start">
             <div className="bg-background border p-6 rounded-xl shadow-lg">
                 <div className="flex flex-col items-center text-center">
-                <Image src={guide.photo} alt={guide.name} width={128} height={128} className="rounded-full mb-4 border-4 border-primary/20 shadow-md"/>
+                <Image src={guide.photo || '/placeholder-avatar.png'} alt={guide.name} width={128} height={128} className="rounded-full mb-4 border-4 border-primary/20 shadow-md"/>
                 <h2 className="text-2xl font-bold">{guide.name}</h2>
                 <p className="text-muted-foreground">{guide.state}, {guide.country}</p>
                 <div className="flex items-center gap-1.5 mt-2 text-yellow-500">
-                    <span className="font-bold text-foreground">{guide.averageRating} ★</span>
+                    <span className="font-bold text-foreground">{guide.averageRating?.toFixed(1)} ★</span>
                     <span className="text-muted-foreground">({guide.numReviews} reviews)</span>
                 </div>
                 </div>
                 <hr className="my-6"/>
                 <div>
                     <h4 className="font-semibold mb-2">Languages</h4>
-                    <p className="text-muted-foreground">{guide.languages.join(', ')}</p>
+                    <p className="text-muted-foreground">{guide.languages?.join(', ')}</p>
                     <h4 className="font-semibold mt-4 mb-2">Specializations</h4>
-                    <p className="text-muted-foreground">{guide.specializations.join(', ')}</p>
+                    <p className="text-muted-foreground">{guide.specializations?.join(', ')}</p>
                 </div>
             </div>
             

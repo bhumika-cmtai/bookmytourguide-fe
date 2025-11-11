@@ -50,7 +50,7 @@ export const updateMyGuideProfile = createAsyncThunk<GuideProfile, FormData>(
 // This thunk returns a more complex object for pagination
 export const getAllGuides = createAsyncThunk<
   { data: GuideProfile[]; total: number; page: number; totalPages: number },
-  { page?: number; limit?: number; search?: string; approved?: boolean } | undefined
+  { zzpage?: number; limit?: number; search?: string; approved?: boolean } | undefined
 >("guide/getAllGuides", async (params = {}, { rejectWithValue }) => {
   try {
     // Style matched: The response itself contains the pagination data alongside the data array

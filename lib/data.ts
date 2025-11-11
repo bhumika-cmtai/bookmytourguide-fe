@@ -34,6 +34,7 @@ export type Review = {
     mobile?: string;
     dob?: string;
     state?: string;
+    serviceLocations?:string[];
     country?: string;
     age?: number;
     languages?: string[];
@@ -128,7 +129,6 @@ export type AdminLocation = {
   pricePerPerson: number;
   description: string;
   image: string;
-  addOns: AdminAddOn[];
 };
 
 
@@ -161,6 +161,7 @@ export interface GuideProfile {
   country?: string;
   age?: number;
   languages?: string[];
+  serviceLocations?:string[];
   experience?: string;
   specializations?: string[];
   availability?: string[];

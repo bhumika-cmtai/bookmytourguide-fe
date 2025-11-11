@@ -1,16 +1,26 @@
+// app/dashboard/guide/profile/page.tsx
 "use client";
 
 import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@/lib/store"; // Adjust this path to your Redux store
-import { getMyGuideProfile, updateMyGuideProfile } from "@/lib/redux/thunks/guide/guideThunk"; // Adjust this path to your thunks file
+import { AppDispatch, RootState } from "@/lib/store";
+import { getMyGuideProfile, updateMyGuideProfile } from "@/lib/redux/thunks/guide/guideThunk";
+// ✅ CORRECTED: These thunks will update the 'admin' slice state
+import { fetchLanguages } from "@/lib/redux/thunks/admin/languageThunks";
+import { fetchAdminLocations } from "@/lib/redux/thunks/admin/locationThunks";
 import Image from "next/image";
+
+// Import your ShadCN UI components
+import { MultiSelect, Option } from "@/components/ui/multi-select"; // Assuming this path is correct
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 // Helper function to format date strings for the date input field
 const formatDateForInput = (isoDate?: string) => {
   if (!isoDate) return "";
   try {
-    // Returns date in "YYYY-MM-DD" format
     return new Date(isoDate).toISOString().split("T")[0];
   } catch (error) {
     console.error("Invalid date format:", isoDate);
@@ -20,8 +30,15 @@ const formatDateForInput = (isoDate?: string) => {
 
 const GuideProfilePage = () => {
   const dispatch: AppDispatch = useDispatch();
+  
+  // --- REDUX STATE ---
   const { myProfile, loading, error } = useSelector(
-    (state: RootState) => state.guide // Assuming 'guide' is the name of your slice in the root reducer
+    (state: RootState) => state.guide
+  );
+  
+  // ✅ CORRECTED: Access locations and languages from within the 'admin' state slice.
+  const { locations, languages } = useSelector(
+    (state: RootState) => state.admin
   );
 
   // --- LOCAL STATE FOR THE FORM ---
@@ -33,28 +50,27 @@ const GuideProfilePage = () => {
     country: "",
     experience: "",
     description: "",
-    languages: "", // Stored as a comma-separated string for the input field
-    specializations: "", // Stored as a comma-separated string
-    availability: "", // Stored as a comma-separated string
+    specializations: "",
   });
+  
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
 
-  // State to hold the actual file objects for submission
+  // State for file objects and previews
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
-
-  // State to hold URLs for image previews
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [licensePreview, setLicensePreview] = useState<string | null>(null);
 
-
   // --- SIDE EFFECTS ---
 
-  // 1. Fetch the guide's profile data when the component first loads.
   useEffect(() => {
     dispatch(getMyGuideProfile());
+    // These thunks will correctly populate state.admin.languages and state.admin.locations
+    dispatch(fetchLanguages());
+    dispatch(fetchAdminLocations());
   }, [dispatch]);
 
-  // 2. Populate the form with the profile data once it has been fetched.
   useEffect(() => {
     if (myProfile) {
       setFormData({
@@ -65,93 +81,75 @@ const GuideProfilePage = () => {
         country: myProfile.country || "",
         experience: myProfile.experience || "",
         description: myProfile.description || "",
-        languages: myProfile.languages?.join(", ") || "",
         specializations: myProfile.specializations?.join(", ") || "",
-        availability: myProfile.availabilityPeriods?.join(", ") || "",
       });
+
+      if (myProfile.languages) {
+        setSelectedLanguages(myProfile.languages);
+      }
       
-      // Set initial image/document previews from existing data
+      if (myProfile.serviceLocations) {
+        setSelectedLocations(myProfile.serviceLocations);
+      }
+      
       if (myProfile.photo) setPhotoPreview(myProfile.photo);
       if (myProfile.license) setLicensePreview(myProfile.license);
     }
   }, [myProfile]);
 
-
   // --- EVENT HANDLERS ---
 
-  // Handles changes in all text-based input fields.
-  const handleInputChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // Handles new file selections for photo and license.
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, files } = e.target;
     if (files && files.length > 0) {
       const file = files[0];
       const previewUrl = URL.createObjectURL(file);
-
       if (name === "photo") {
         setPhotoFile(file);
         setPhotoPreview(previewUrl);
       } else if (name === "license") {
         setLicenseFile(file);
-        // If the new file is an image, show a preview. Otherwise, show its name.
-        if (file.type.startsWith("image/")) {
-          setLicensePreview(previewUrl);
-        } else {
-          setLicensePreview(file.name);
-        }
+        setLicensePreview(file.type.startsWith("image/") ? previewUrl : file.name);
       }
     }
   };
 
-  // Handles the form submission.
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     const submissionFormData = new FormData();
 
-    // Append all text fields from the local state to the FormData object
     Object.entries(formData).forEach(([key, value]) => {
-      // For array-like fields, split the string and append each item
-      if (
-        ["languages", "specializations", "availability"].includes(key) &&
-        typeof value === "string"
-      ) {
-        const arrayValue = value.split(",").map((item: string) => item.trim()).filter(Boolean);
-        arrayValue.forEach((item) => submissionFormData.append(`${key}[]`, item));
+      if (key === "specializations") {
+        const arrayValue = value.split(",").map(item => item.trim()).filter(Boolean);
+        arrayValue.forEach(item => submissionFormData.append(`${key}[]`, item));
       } else {
         submissionFormData.append(key, String(value));
       }
     });
 
-    // Append the file objects only if a new file has been selected
-    if (photoFile) {
-      submissionFormData.append("photo", photoFile);
-    }
-    if (licenseFile) {
-      submissionFormData.append("license", licenseFile);
-    }
+    selectedLanguages.forEach(lang => submissionFormData.append('languages[]', lang));
+    selectedLocations.forEach(loc => submissionFormData.append('serviceLocations[]', loc));
 
+    if (photoFile) submissionFormData.append("photo", photoFile);
+    if (licenseFile) submissionFormData.append("license", licenseFile);
+    
     dispatch(updateMyGuideProfile(submissionFormData));
   };
+  
+  // --- OPTIONS FOR SELECT DROPDOWNS ---
+  // Ensure that 'languages' and 'locations' are arrays before mapping
+  const languageOptions: Option[] = Array.isArray(languages) ? languages.map(lang => ({ value: lang.languageName, label: lang.languageName })) : [];
+  const locationOptions: Option[] = Array.isArray(locations) ? locations.map(loc => ({ value: loc.placeName, label: loc.placeName })) : [];
 
-
-  // --- STYLING CONSTANTS (using your CSS variables) ---
-  const inputFieldStyle = "w-full px-3 py-2 bg-[var(--input)] border border-[var(--border)] rounded-md shadow-sm placeholder-[var(--muted-foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--ring)] focus:border-[var(--primary)] transition";
-  const fileInputStyle = "block w-full text-sm text-[var(--muted-foreground)] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[var(--primary)]/10 file:text-[var(--primary)] hover:file:bg-[var(--primary)]/20 cursor-pointer";
-  const labelStyle = "block text-sm font-medium text-[var(--muted-foreground)] mb-1";
-
-console.log(myProfile)
   return (
-    <div className="container mx-auto p-4 md:p-8 bg-[var(--background)]">
-      <div className="bg-[var(--card)] p-6 md:p-8 rounded-lg shadow-md border border-[var(--border)]">
-        <div className="flex justify-between items-center mb-6 pb-4 border-b border-[var(--border)]">
-          <h1 className="text-2xl md:text-3xl font-bold text-[var(--foreground)]">
+    <div className="container mx-auto p-4 md:p-8 bg-background">
+      <div className="bg-card p-6 md:p-8 rounded-lg shadow-md border">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b">
+          <h1 className="text-2xl md:text-3xl font-bold text-card-foreground">
             Profile Information
           </h1>
         </div>
@@ -160,92 +158,89 @@ console.log(myProfile)
           {/* Section 1: Personal Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className={labelStyle}>Name</label>
-              <input type="text" name="name" value={formData.name} onChange={handleInputChange} className={inputFieldStyle}/>
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" name="name" value={formData.name} onChange={handleInputChange} />
             </div>
             <div>
-              <label className={labelStyle}>Email</label>
-              <input type="email" value={myProfile?.email || ""} disabled className={`${inputFieldStyle} bg-[var(--muted)] cursor-not-allowed`}/>
-            </div>
-             <div>
-              <label className={labelStyle}>Mobile</label>
-              <input type="tel" name="mobile" value={formData.mobile} onChange={handleInputChange} className={inputFieldStyle}/>
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" value={myProfile?.email || ""} disabled />
             </div>
             <div>
-              <label className={labelStyle}>Date of Birth</label>
-              <input type="date" name="dob" value={formData.dob} onChange={handleInputChange} className={inputFieldStyle}/>
-            </div>
-             <div>
-              <label className={labelStyle}>State</label>
-              <input type="text" name="state" value={formData.state} onChange={handleInputChange} className={inputFieldStyle}/>
+              <Label htmlFor="mobile">Mobile</Label>
+              <Input id="mobile" name="mobile" type="tel" value={formData.mobile} onChange={handleInputChange} />
             </div>
             <div>
-              <label className={labelStyle}>Country</label>
-              <input type="text" name="country" value={formData.country} onChange={handleInputChange} className={inputFieldStyle}/>
+              <Label htmlFor="dob">Date of Birth</Label>
+              <Input id="dob" name="dob" type="date" value={formData.dob} onChange={handleInputChange} />
+            </div>
+            <div>
+              <Label htmlFor="state">State</Label>
+              <Input id="state" name="state" value={formData.state} onChange={handleInputChange} />
+            </div>
+            <div>
+              <Label htmlFor="country">Country</Label>
+              <Input id="country" name="country" value={formData.country} onChange={handleInputChange} />
             </div>
           </div>
 
           {/* Section 2: Professional Information */}
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
-              <label className={labelStyle}>Experience (e.g., 5 years)</label>
-              <input type="text" name="experience" value={formData.experience} onChange={handleInputChange} className={inputFieldStyle}/>
-            </div>
-             <div>
-              <label className={labelStyle}>Languages (comma separated)</label>
-              <input type="text" name="languages" value={formData.languages} onChange={handleInputChange} placeholder="e.g. English, Hindi, Spanish" className={inputFieldStyle}/>
+              <Label htmlFor="experience">Experience (e.g., 5 years)</Label>
+              <Input id="experience" name="experience" value={formData.experience} onChange={handleInputChange} />
             </div>
             <div>
-              <label className={labelStyle}>Specializations (comma separated)</label>
-              <input type="text" name="specializations" value={formData.specializations} onChange={handleInputChange} placeholder="e.g. History, Adventure, Food Tours" className={inputFieldStyle}/>
+              <Label>Languages</Label>
+              <MultiSelect options={languageOptions} selected={selectedLanguages} onChange={setSelectedLanguages} placeholder="Select languages..."/>
+            </div>
+            <div>
+                <Label>Service Locations</Label>
+                <MultiSelect options={locationOptions} selected={selectedLocations} onChange={setSelectedLocations} placeholder="Select locations..."/>
             </div>
             <div className="md:col-span-2">
-                <label className={labelStyle}>Availability (comma separated)</label>
-                <input type="text" name="availability" value={formData.availability} onChange={handleInputChange} placeholder="e.g. Weekends, Mon-Fri" className={inputFieldStyle}/>
+              <Label htmlFor="specializations">Specializations (comma separated)</Label>
+              <Input id="specializations" name="specializations" value={formData.specializations} onChange={handleInputChange} placeholder="e.g. History, Adventure, Food Tours" />
             </div>
             <div className="md:col-span-2">
-                <label className={labelStyle}>Description / Bio</label>
-                <textarea name="description" value={formData.description} onChange={handleInputChange} rows={5} className={inputFieldStyle}
-                placeholder="Tell travelers a little about yourself..."></textarea>
+              <Label htmlFor="description">Description / Bio</Label>
+              <Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} rows={5} placeholder="Tell travelers a little about yourself..." />
             </div>
-           </div>
+          </div>
 
           {/* Section 3: File Uploads */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
             <div>
-                <label className={`${labelStyle} mb-2`}>Profile Photo</label>
-                <div className="flex items-center gap-4 mt-2">
-                    {photoPreview && (
-                      <Image src={photoPreview} alt="Profile Preview" width={80} height={80} className="rounded-full object-cover w-20 h-20"/>
-                    )}
-                    <input type="file" name="photo" onChange={handleFileChange} accept="image/*" className={fileInputStyle}/>
-                </div>
+              <Label className="mb-2 block">Profile Photo</Label>
+              <div className="flex items-center gap-4 mt-2">
+                {photoPreview && <Image src={photoPreview} alt="Profile Preview" width={80} height={80} className="rounded-full object-cover w-20 h-20" />}
+                <Input type="file" name="photo" onChange={handleFileChange} accept="image/*" />
+              </div>
             </div>
-             <div>
-                <label className={`${labelStyle} mb-2`}>License/Certificate (Image or PDF)</label>
-                 <div className="flex flex-col gap-4 mt-2">
-                    {licensePreview && (
-                      <div className="p-2 border border-dashed border-[var(--border)] rounded-md">
-                        {licensePreview.startsWith('blob:') || licenseFile?.type.startsWith('image/') || /\.(jpe?g|png|gif|webp)$/i.test(licensePreview) ? (
-                          <Image src={licensePreview} alt="License Preview" width={120} height={80} className="rounded-md object-contain"/>
-                        ) : (
-                          <p className="text-sm text-[var(--muted-foreground)] p-2">
-                            Current document: {licenseFile?.name || licensePreview.split('/').pop()}
-                          </p>
-                        )}
-                      </div>
+            <div>
+              <Label className="mb-2 block">License/Certificate (Image or PDF)</Label>
+              <div className="flex flex-col gap-4 mt-2">
+                {licensePreview && (
+                  <div className="p-2 border border-dashed rounded-md">
+                    {licensePreview.startsWith('blob:') || licenseFile?.type.startsWith('image/') || /\.(jpe?g|png|gif|webp)$/i.test(licensePreview) ? (
+                      <Image src={licensePreview} alt="License Preview" width={120} height={80} className="rounded-md object-contain" />
+                    ) : (
+                      <p className="text-sm text-muted-foreground p-2">
+                        Current document: {licenseFile?.name || licensePreview.split('/').pop()}
+                      </p>
                     )}
-                    <input type="file" name="license" onChange={handleFileChange} accept="image/*,.pdf" className={fileInputStyle}/>
-                </div>
+                  </div>
+                )}
+                <Input type="file" name="license" onChange={handleFileChange} accept="image/*,.pdf" />
+              </div>
             </div>
           </div>
 
           {/* Section 4: Submission */}
-          <div className="pt-6 border-t border-[var(--border)] flex items-center justify-end gap-4">
-            {error && <p className="text-sm text-[var(--destructive)] animate-pulse">{error}</p>}
-            <button type="submit" disabled={loading} className="bg-[var(--primary)] text-[var(--primary-foreground)] font-bold py-2 px-6 rounded-lg hover:bg-[var(--destructive)] transition duration-200 disabled:opacity-60 disabled:cursor-not-allowed">
+          <div className="pt-6 border-t flex items-center justify-end gap-4">
+            {error && <p className="text-sm text-destructive animate-pulse">{error}</p>}
+            <Button type="submit" disabled={loading}>
               {loading ? "Saving..." : "Save Changes"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
