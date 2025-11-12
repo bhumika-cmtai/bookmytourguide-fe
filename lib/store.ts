@@ -10,6 +10,7 @@ import subscriptionReducer from "@/lib/redux/subscriptionSlice"
 import contactReducer from "@/lib/redux/contactSlice"
 import bookingReducer from "@/lib/redux/bookingSlice"
 import tourGuideBookingReducer from "@/lib/redux/tourGuideBookingSlice"
+import customReducer from "@/lib/redux/customTourSlice";
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -22,9 +23,9 @@ export const store = configureStore({
     subscriptions: subscriptionReducer,
     contacts: contactReducer,
     bookings: bookingReducer,
-    tourGuideBooking: tourGuideBookingReducer
-
-  },  
+    tourGuideBooking: tourGuideBookingReducer,
+    customTour: customReducer,
+  },
 });
 
 export type RootState = ReturnType<typeof store.getState>;
