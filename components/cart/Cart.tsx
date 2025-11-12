@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useCart } from "@/contexts/CardContext";
+// YAHAN SE 'useCart' IMPORT HATA DIYA GAYA HAI
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -21,8 +21,25 @@ type CartItemType = {
   image?: string;
 };
 
+// Placeholder data jab tak aap Redux ya naya context nahi jodte
+const getDummyCartState = () => {
+  const dummyItems: CartItemType[] = [
+    // Aap isko khali `[]` bhi kar sakte hain empty cart dekhne ke liye
+    { id: '1', name: 'Heritage Tour', price: 2500, quantity: 1, image: '' },
+    { id: '2', name: 'Cooking Class', price: 1800, quantity: 2, image: '' },
+  ];
+  
+  const total = dummyItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+  return {
+    items: dummyItems,
+    total: total,
+  };
+};
+
 export function Cart() {
-  const { state } = useCart();
+  // YAHAN 'useCart' KI JAGAH DUMMY DATA USE KIYA GAYA HAI
+  const state = getDummyCartState(); 
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -71,7 +88,7 @@ export function Cart() {
 }
 
 function CartItem({ item }: { item: CartItemType }) {
-  const { dispatch } = useCart();
+  // YAHAN SE 'useCart' AUR 'dispatch' HATA DIYA GAYA HAI
 
   return (
     <div className="flex items-center justify-between space-x-4">
@@ -84,14 +101,8 @@ function CartItem({ item }: { item: CartItemType }) {
           variant="outline"
           size="sm"
           onClick={() => {
-            if (item.quantity > 1) {
-              dispatch({
-                type: "UPDATE_QUANTITY",
-                payload: { id: item.id, quantity: item.quantity - 1 },
-              });
-            } else {
-              dispatch({ type: "REMOVE_ITEM", payload: item.id });
-            }
+            // Yahan se dispatch ka logic hata diya gaya hai
+            alert("Decrement quantity logic needs to be connected.");
           }}
         >
           <Minus className="h-4 w-4" />
@@ -100,12 +111,10 @@ function CartItem({ item }: { item: CartItemType }) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() =>
-            dispatch({
-              type: "UPDATE_QUANTITY",
-              payload: { id: item.id, quantity: item.quantity + 1 },
-            })
-          }
+          onClick={() => {
+            // Yahan se dispatch ka logic hata diya gaya hai
+            alert("Increment quantity logic needs to be connected.");
+          }}
         >
           <Plus className="h-4 w-4" />
         </Button>

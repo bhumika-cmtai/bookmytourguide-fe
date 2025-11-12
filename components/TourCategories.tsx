@@ -14,40 +14,44 @@ import {
   MapPin,
   Icon as LucideIcon,
 } from "lucide-react";
-import { useCart } from "@/contexts/CardContext";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchPackages } from "@/lib/redux/thunks/admin/packageThunks";
 import { RootState, AppDispatch } from "@/lib/store";
 import { AdminPackage } from "@/types/admin";
+import { useLanguage } from "@/contexts/LanguageContext";
 
-// Skeleton Component
 const SkeletonCard = () => (
   <Card className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-pulse border-0 bg-gray-200 overflow-hidden">
+    {" "}
     <div className="relative overflow-hidden">
-      <div className="w-full h-48 bg-gray-300"></div>
-    </div>
+      {" "}
+      <div className="w-full h-48 bg-gray-300"></div>{" "}
+    </div>{" "}
     <CardContent className="p-6">
+      {" "}
       <div className="flex items-center mb-3">
-        <div className="w-12 h-12 bg-gray-300 rounded-lg mr-4"></div>
+        {" "}
+        <div className="w-12 h-12 bg-gray-300 rounded-lg mr-4"></div>{" "}
         <div className="flex-1">
-          <div className="h-6 w-3/4 bg-gray-300 rounded"></div>
-          <div className="h-4 w-1/4 bg-gray-300 rounded mt-2"></div>
-        </div>
-      </div>
-      <div className="h-4 bg-gray-300 rounded mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-300 rounded mb-4"></div>
+          {" "}
+          <div className="h-6 w-3/4 bg-gray-300 rounded"></div>{" "}
+          <div className="h-4 w-1/4 bg-gray-300 rounded mt-2"></div>{" "}
+        </div>{" "}
+      </div>{" "}
+      <div className="h-4 bg-gray-300 rounded mb-2"></div>{" "}
+      <div className="h-4 w-5/6 bg-gray-300 rounded mb-4"></div>{" "}
       <div className="flex items-center justify-between mb-4">
-        <div className="h-8 w-1/3 bg-gray-300 rounded"></div>
-      </div>
-      <div className="h-10 w-full bg-gray-300 rounded mb-2"></div>
-      <div className="h-10 w-full bg-gray-300 rounded"></div>
-    </CardContent>
+        {" "}
+        <div className="h-8 w-1/3 bg-gray-300 rounded"></div>{" "}
+      </div>{" "}
+      <div className="h-10 w-full bg-gray-300 rounded mb-2"></div>{" "}
+      <div className="h-10 w-full bg-gray-300 rounded"></div>{" "}
+    </CardContent>{" "}
   </Card>
 );
 
-// Helper to map category names to icons
 const getCategoryIcon = (categoryTitle: string): LucideIcon => {
   switch (categoryTitle.toLowerCase()) {
     case "eco tours":
@@ -63,12 +67,12 @@ const getCategoryIcon = (categoryTitle: string): LucideIcon => {
     case "handcraft tours":
       return ShoppingBag;
     default:
-      return Star; // A default icon
+      return Star;
   }
 };
 
 export function TourCategories() {
-  const { dispatch: cartDispatch } = useCart();
+  const { t } = useLanguage();
   const dispatch = useDispatch<AppDispatch>();
   const {
     items: packages,
@@ -94,21 +98,18 @@ export function TourCategories() {
       <div className="container max-w-7xl mx-auto px-4">
         <div className="text-center mb-16 animate-fade-in-up">
           <h2 className="text-4xl md:text-5xl font-bold text-primary mb-4">
-            Explore Our Tour Categories
+            {t("explore_tour_categories")}
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto text-balance">
-            Choose from our carefully curated selection of authentic
-            experiences, each led by certified local experts who know their
-            craft inside out.
+            {t("explore_tour_categories_desc")}
           </p>
           <div className="mt-6 flex justify-center">
             <Badge variant="secondary" className="px-4 py-2">
               <MapPin className="w-4 h-4 mr-2" />
-              Available in 10+ Languages
+              {t("available_in_languages")}
             </Badge>
           </div>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {loading === "pending" && renderSkeleton()}
           {loading === "succeeded" &&
@@ -126,16 +127,7 @@ export function TourCategories() {
                       alt={pkg.title}
                       className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                     />
-                    {/* You might want a 'popular' field in your AdminPackage type */}
-                    {/* {pkg.popular && (
-                      <div className="absolute top-4 left-4">
-                        <Badge className="bg-red-500 text-white">Popular</Badge>
-                      </div>
-                    )} */}
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                      {/* You might want a 'tours' count field in your AdminPackage type */}
-                      {/* {pkg.tours} Tours */}
-                    </div>
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium"></div>
                     <div className="absolute bottom-4 left-4 right-4">
                       <div className="bg-black/60 backdrop-blur-sm rounded-lg p-3 text-white">
                         <div className="flex items-center justify-between text-sm">
@@ -145,14 +137,11 @@ export function TourCategories() {
                           </div>
                           <div className="flex items-center">
                             <Users className="w-4 h-4 mr-1" />
-                            {/* You might want a 'guides' count field in your AdminPackage type */}
-                            {/* {pkg.guides} Guides */}
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-
                   <CardContent className="p-6">
                     <div className="flex items-center mb-3">
                       <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mr-4">
@@ -170,40 +159,33 @@ export function TourCategories() {
                         </div>
                       </div>
                     </div>
-
                     <p className="text-muted-foreground mb-4 text-balance text-sm leading-relaxed">
                       {pkg.description}
                     </p>
-
                     <div className="flex items-center justify-between mb-4">
                       <div className="text-2xl font-bold text-primary">
                         ₹{pkg.price}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        per person
+                        {t("per_person")}
                       </div>
                     </div>
                     <button
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 px-4 rounded-lg font-semibold mb-2 transition-all"
                       onClick={() => {
-                        cartDispatch({
-                          type: "ADD_ITEM",
-                          payload: {
-                            id: pkg._id,
-                            name: pkg.title,
-                            price: pkg.price,
-                            image: pkg.images[0],
-                          },
-                        });
+                        console.log("Add to cart clicked for:", pkg.title);
+                        alert(
+                          "Add to cart functionality needs to be connected."
+                        );
                       }}
                     >
-                      Add to Cart
+                      {t("add_to_cart")}
                     </button>
                     <Button
                       asChild
                       className="w-full bg-primary hover:bg-primary/80 text-primary-foreground"
                     >
-                      <Link href={`/tours/${pkg._id}`}>View Tours</Link>
+                      <Link href={`/tours/${pkg._id}`}>{t("view_tours")}</Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -211,15 +193,13 @@ export function TourCategories() {
             })}
           {error && <p className="text-red-500 col-span-full">{error}</p>}
         </div>
-
         <div className="mt-16 text-center">
           <div className="bg-secondary/10 rounded-2xl p-8 max-w-2xl mx-auto">
             <h3 className="text-2xl font-bold text-primary mb-4">
-              Looking for Something Specific?
+              {t("looking_for_something_specific")}
             </h3>
             <p className="text-muted-foreground mb-6">
-              Can't find the perfect tour? Our guides can create custom
-              experiences tailored to your interests.
+              {t("custom_tour_prompt")}
             </p>
             <Link href="/dashboard/user/custom-tour">
               <Button
@@ -227,7 +207,7 @@ export function TourCategories() {
                 variant="outline"
                 className="border-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground bg-transparent"
               >
-                Request Custom Tour
+                {t("request_custom_tour")}
               </Button>
             </Link>
           </div>

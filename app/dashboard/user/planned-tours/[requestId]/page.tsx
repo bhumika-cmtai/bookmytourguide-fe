@@ -98,7 +98,7 @@ export default function CustomRequestDetailPage() {
         <p>{detailError}</p>
       </div>
     );
-  if (!request) return (<div></div>);
+  if (!request) return (<div>Not found</div>);
 
   return (
     <div className="min-h-screen bg-muted/50 p-4 sm:p-8">

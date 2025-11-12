@@ -8,38 +8,27 @@ import {
   slideInRight,
   scaleIn,
 } from "@/lib/motion-variants";
-import { Video, Share, Download, Heart, Play, Film } from "lucide-react";
+import { Video, Share, Heart, Play, Film } from "lucide-react";
 import Image from "next/image";
-
-const features = [
-  {
-    text: "Relive your trip anytime, anywhere",
-    icon: Play,
-    color: "from-red-500 to-pink-500",
-  },
-  {
-    text: "Share it easily with your loved ones",
-    icon: Share,
-    color: "from-blue-500 to-cyan-500",
-  },
-  {
-    text: "Preserve your travel story forever",
-    icon: Heart,
-    color: "from-purple-500 to-pink-500",
-  },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function YouTubeMemorySection() {
+  const { t } = useLanguage();
+
+  const features = [
+    { textKey: "yt_feat_1", icon: Play, color: "from-red-500 to-pink-500" },
+    { textKey: "yt_feat_2", icon: Share, color: "from-blue-500 to-cyan-500" },
+    { textKey: "yt_feat_3", icon: Heart, color: "from-purple-500 to-pink-500" },
+  ];
+
   return (
     <section className="py-16 md:py-24 bg-muted/30 relative overflow-hidden">
-      {/* Background elements */}
       <motion.div
         initial={{ opacity: 0, y: 100 }}
         whileInView={{ opacity: 0.05, y: 0 }}
         transition={{ duration: 3 }}
         className="absolute top-10 right-10 w-96 h-96 bg-red-500/20 rounded-full blur-3xl"
       />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"
@@ -47,7 +36,6 @@ export default function YouTubeMemorySection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={staggerContainer}
         >
-          {/* Header */}
           <motion.div
             variants={fadeInUp}
             custom={0}
@@ -61,27 +49,19 @@ export default function YouTubeMemorySection() {
             >
               <Film className="w-4 h-4 text-red-500" />
               <span className="text-sm font-medium text-red-500">
-                Memory Feature
+                {t("yt_header")}
               </span>
             </motion.div>
-
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 text-balance leading-tight">
-              Our YouTube{" "}
-              <span className="bg-gradient-to-r from-red-500 to-pink-600 bg-clip-text text-transparent">
-                Memory Feature
-              </span>{" "}
-              🎥
+              {t("yt_title")} 🎥
             </h2>
             <div className="h-1 w-20 bg-gradient-to-r from-red-500 to-pink-600 rounded-full mx-auto" />
           </motion.div>
-
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-stretch">
-            {/* Visual Column */}
             <motion.div
               variants={slideInLeft}
               className="relative flex flex-col order-2 lg:order-1"
             >
-              {/* Main video container */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
@@ -95,8 +75,6 @@ export default function YouTubeMemorySection() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-
-                {/* Play button overlay */}
                 <motion.div
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
@@ -106,46 +84,34 @@ export default function YouTubeMemorySection() {
                     <Play className="w-8 h-8 text-red-500 ml-1 fill-current" />
                   </div>
                 </motion.div>
-
-                {/* Bottom info card */}
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="bg-background/90 backdrop-blur-sm rounded-xl p-4 border">
                     <div className="flex items-center gap-3">
                       <Video className="w-5 h-5 text-red-500" />
                       <span className="font-bold text-foreground">
-                        Complimentary Video Service
+                        {t("yt_overlay_title")}
                       </span>
                     </div>
                   </div>
                 </div>
               </motion.div>
-
-              {/* Decorative elements */}
               <motion.div
                 animate={{ rotate: -360 }}
                 transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
                 className="absolute -top-4 -left-4 w-8 h-8 border-2 border-red-500/30 rounded-full"
               />
             </motion.div>
-
-            {/* Content Column */}
             <motion.div
               variants={slideInRight}
               className="flex flex-col space-y-8 order-1 lg:order-2"
             >
               <div className="space-y-6 flex-grow">
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  To make your journey unforgettable, we offer a complimentary
-                  video memory service.
+                  {t("yt_p1")}
                 </p>
-
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  During your tour, your guide can capture short clips and
-                  highlights of your travel experience, which will later be
-                  edited and uploaded as a YouTube link — allowing you to:
+                  {t("yt_p2")}
                 </p>
-
-                {/* Enhanced features list */}
                 <div className="space-y-4">
                   {features.map((feature, index) => (
                     <motion.div
@@ -167,19 +133,16 @@ export default function YouTubeMemorySection() {
                             <feature.icon className="w-5 h-5 text-foreground group-hover:text-red-500 transition-colors" />
                           </div>
                         </motion.div>
-
                         <p className="text-muted-foreground leading-relaxed pt-2 group-hover:text-foreground transition-colors">
-                          {feature.text}
+                          {t(feature.textKey)}
                         </p>
                       </div>
                     </motion.div>
                   ))}
                 </div>
-
                 <div className="p-6 rounded-xl bg-gradient-to-br from-red-500/10 to-pink-500/5 border border-red-500/20">
                   <p className="text-lg text-muted-foreground leading-relaxed">
-                    This service is our way of adding a personal touch to your
-                    incredible Indian journey.
+                    {t("yt_p3")}
                   </p>
                 </div>
               </div>
