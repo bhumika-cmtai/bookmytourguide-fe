@@ -128,7 +128,9 @@ export default function BookingDetailPage() {
       </div>
     );
   }
-  if (!booking) return notFound();
+  if (!booking){
+    return(<div>hey booking is not here {booking}</div>)
+  }
 
   const tour = typeof booking.tour === "object" ? booking.tour : null;
   const guide = typeof booking.guide === "object" ? booking.guide : null;
