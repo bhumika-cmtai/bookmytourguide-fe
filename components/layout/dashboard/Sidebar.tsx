@@ -66,6 +66,7 @@ const adminNavigation = [
 const guideNavigation = [
   { name: "Dashboard", href: "/dashboard/guide", icon: LayoutGrid },
   { name: "Edit Profile", href: "/dashboard/guide/profile", icon: UserCircle },
+  { name: "Tour Guide Booking", href: "/dashboard/guide/tourguide-booking", icon: Bus },
   { name: "Current Tours", href: "/dashboard/guide/current-tours", icon: Bus },
   {
     name: "Upcoming Tours",
@@ -114,6 +115,7 @@ const userNavigation = [
     href: "/dashboard/user/planned-tours",
     icon: TramFront,
   },
+  { name: "Tour Guide Booking", href: "/dashboard/user/tour-guide-booking", icon: BookOpen },
   { name: "My Bookings", href: "/dashboard/user/my-bookings", icon: BookOpen },
 ];
 

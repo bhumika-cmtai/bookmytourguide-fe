@@ -39,6 +39,7 @@ export interface tourGuideBooking {
   cancelledBy?: "User" | "Admin";
   cancellationReason?: string;
   razorpayRefundId?: string;
+  originalGuide?:string;
 
   // Timestamps
   createdAt: string;
@@ -81,6 +82,7 @@ export interface Booking {
   numberOfTourists: number;
   totalPrice: number;
   advanceAmount: number;
+  remainingAmount: number;
   paymentId: string;
   status: "Upcoming" | "Completed" | "Cancelled";
   paymentStatus: "Advance Paid" | "Fully Paid" | "Refunded";
@@ -280,6 +282,7 @@ export interface GuideState {
   guides: GuideProfile[];
   currentGuide: GuideProfile | null;
   myProfile: GuideProfile | null;
+  tourGuideBooking: tourGuideBooking[]; 
   pricingDetails: {
     locations: AdminLocation[];
     languages: LanguageOption[];
@@ -318,6 +321,8 @@ export interface tourGuideBooking {
   razorpayPaymentId?: string;
   finalPaymentRazorpayOrderId?: string;
   finalPaymentRazorpayPaymentId?: string;
+
+  originalGuide?:string;
 
   // Contact Info
   contactInfo: {

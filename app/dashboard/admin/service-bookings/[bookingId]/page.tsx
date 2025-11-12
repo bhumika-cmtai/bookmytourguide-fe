@@ -10,9 +10,15 @@ import {
   updateBookingStatus,
   assignSubstituteGuide,
 } from "@/lib/redux/thunks/booking/bookingThunks";
-import { getAllGuides } from "@/lib/redux/thunks/guide/guideThunk";
-import type { Booking, BookingStatus, Guide } from "@/lib/data";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAllGuides } from "@/lib/redux/thunks/guide/guideThunk"; // Maan rahe hain ki yeh thunk aapke paas hai
+import type { Booking, Guide, BookingStatus } from "@/lib/data";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

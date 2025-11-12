@@ -1,6 +1,6 @@
 // lib/redux/guides/guide.slice.ts
-import { createSlice } from "@reduxjs/toolkit";
-import { GuideState, GuideProfile } from "@/lib/data"; // Assuming GuideProfile is the type
+import { createSlice, PayloadAction  } from "@reduxjs/toolkit";
+import { GuideState, GuideProfile, tourGuideBooking } from "@/lib/data"; // Assuming GuideProfile is the type
 import {
   getMyGuideProfile,
   updateMyGuideProfile,
@@ -9,11 +9,14 @@ import {
   toggleGuideApproval,
   deleteGuide,
   updateMyAvailability,
-  fetchGuidePricingDetails 
+  fetchGuidePricingDetails ,
+  adminGetAllGuides,
+  fetchMyBookingsThunk
 } from "@/lib/redux/thunks/guide/guideThunk";
 
 const initialState: GuideState = {
   guides: [],
+  tourGuideBooking: [],
   currentGuide: null,
   myProfile: null,
   loading: false,
@@ -76,6 +79,38 @@ const guideSlice = createSlice({
         };
       })
       .addCase(getAllGuides.rejected, setRejected)
+      
+      .addCase(adminGetAllGuides.pending, setPending)
+      .addCase(adminGetAllGuides.fulfilled, (state, action) => {
+        state.loading = false;
+        // This thunk replaces the entire guides array
+        state.guides = action.payload.data; 
+        state.pagination = {
+          total: action.payload.total,
+          page: action.payload.page,
+          totalPages: action.payload.totalPages,
+        };
+      })
+      .addCase(adminGetAllGuides.rejected, setRejected)
+
+      // Handle Fetch My Bookings
+      .addCase(fetchMyBookingsThunk.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchMyBookingsThunk.fulfilled,
+        (state, action: PayloadAction<tourGuideBooking[]>) => { // This now works
+          state.loading = false;
+          state.tourGuideBooking = action.payload;
+        }
+      )
+      .addCase(fetchMyBookingsThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+
       builder
       .addCase(fetchGuidePricingDetails.pending, (state) => {
         state.pricingLoading = true;
@@ -110,6 +145,7 @@ const guideSlice = createSlice({
         }
       })
       .addCase(getGuideById.rejected, setRejected)
+      
 
       // Handle Toggle Approval
       .addCase(toggleGuideApproval.pending, setPending)
