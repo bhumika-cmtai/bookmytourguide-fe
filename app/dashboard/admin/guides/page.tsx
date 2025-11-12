@@ -18,7 +18,7 @@ import { EditGuideSheet } from '@/components/admin/EditGuideSheet';
 
 // Import Redux Thunks and Actions
 import {
-  getAllGuides,
+  adminGetAllGuides as getAllGuides,
   toggleGuideApproval,
   deleteGuide,
 } from '@/lib/redux/thunks/guide/guideThunk';

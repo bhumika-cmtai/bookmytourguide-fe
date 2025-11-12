@@ -10,7 +10,7 @@ import {
   fetchBookingById,
   updateBookingStatus,
 } from "@/lib/redux/thunks/booking/bookingThunks";
-import { getAllGuides } from "@/lib/redux/thunks/guide/guideThunk"; // Maan rahe hain ki yeh thunk aapke paas hai
+import { getAllGuides } from "@/lib/redux/thunks/guide/guideThunk"; 
 import type { Booking, Guide, BookingStatus } from "@/lib/data";
 import {
   Card,

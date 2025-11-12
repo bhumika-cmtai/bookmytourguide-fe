@@ -238,6 +238,7 @@ export interface GuideState {
   guides: GuideProfile[];
   currentGuide: GuideProfile | null;
   myProfile: GuideProfile | null;
+  tourGuideBooking: tourGuideBooking[]; 
   pricingDetails: {
     locations: AdminLocation[];
     languages: LanguageOption[];
@@ -276,6 +277,8 @@ export interface tourGuideBooking {
   razorpayPaymentId?: string;
   finalPaymentRazorpayOrderId?: string;
   finalPaymentRazorpayPaymentId?: string;
+
+  originalGuide?:string;
 
   // Contact Info
   contactInfo: {

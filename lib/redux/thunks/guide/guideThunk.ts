@@ -2,6 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { apiService } from "@/lib/service/api";
 import { GuideProfile } from "@/lib/data";
 import { AdminLocation, LanguageOption } from '@/lib/data';
+import { tourGuideBooking } from '@/lib/data';
 
 const handleError = (err: any) =>
   err.response?.data?.message || err.message || "An error occurred";
@@ -40,7 +41,25 @@ export const updateMyGuideProfile = createAsyncThunk<GuideProfile, FormData>(
   }
 );
 
-// Get all guides
+// Get all guides admin
+export const adminGetAllGuides = createAsyncThunk<
+  { data: GuideProfile[]; total: number; page: number; totalPages: number },
+  { location?: string; language?:string; page?: number; limit?: number; search?: string; approved?: boolean } | undefined
+>("guide/adminGetAllGuides", async (params = {}, { rejectWithValue }) => {
+  try {
+    const response = await apiService.get<{
+      data: GuideProfile[];
+      total: number;
+      page: number;
+      totalPages: number;
+    }>("/api/guides/all-guides", { params });
+
+    return response;
+  } catch (err: any) {
+    return rejectWithValue(handleError(err));
+  }
+});
+
 export const getAllGuides = createAsyncThunk<
   { data: GuideProfile[]; total: number; page: number; totalPages: number },
   { location?: string; language?:string; page?: number; limit?: number; search?: string; approved?: boolean } | undefined
@@ -151,3 +170,15 @@ export const fetchGuidePricingDetails = createAsyncThunk<
     return rejectWithValue(handleError(err));
   }
 });
+
+export const fetchMyBookingsThunk = createAsyncThunk<tourGuideBooking[]>(
+  'guideBookings/fetchMyBookings',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await apiService.get('/api/guides/my-bookings');
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch bookings');
+    }
+  }
+);
