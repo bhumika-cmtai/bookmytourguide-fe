@@ -1,76 +1,50 @@
 "use client";
 
 import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
+import { useParams, useRouter, notFound } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
   fetchBookingById,
   cancelAndRefundBooking,
+  createRemainingPaymentOrder,
+  verifyRemainingPayment,
 } from "@/lib/redux/thunks/booking/bookingThunks";
-import type { Booking, BookingStatus, Guide } from "@/lib/data";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Loader2,
-  AlertCircle,
-  Calendar,
-  Users,
+  XCircle,
+  CheckCircle,
+  CreditCard,
   MapPin,
-  User,
-  Mail,
-  Phone,
-  ArrowLeft,
-  Undo2,
+  User as UserIcon,
+  Shield,
+  AlertCircle,
 } from "lucide-react";
 
-const getStatusVariant = (status: BookingStatus) => {
-  switch (status) {
-    case "Upcoming":
-      return "default";
-    case "Completed":
-      return "secondary";
-    case "Cancelled":
-      return "destructive";
-    default:
-      return "outline";
+declare global {
+  interface Window {
+    Razorpay: any;
   }
-};
+}
 
-const GuideInfo = ({ guide }: { guide: Guide }) => (
-  <div className="space-y-3">
-    <div className="flex items-center gap-3">
-      <Image
-        src={guide.photo || "/placeholder.png"}
-        alt={guide.name}
-        width={60}
-        height={60}
-        className="rounded-full object-cover"
-      />
-      <div>
-        <p className="font-bold text-lg">{guide.name}</p>
-        <p className="text-sm text-muted-foreground">Your Assigned Guide</p>
-      </div>
-    </div>
-    <p className="flex items-center gap-3">
-      <Mail className="w-5 h-5" /> {guide.email}
-    </p>
-    {guide.mobile && (
-      <p className="flex items-center gap-3">
-        <Phone className="w-5 h-5" /> {guide.mobile}
-      </p>
-    )}
-  </div>
-);
-
-export default function UserBookingDetailsPage() {
-  const dispatch = useAppDispatch();
+export default function BookingDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const dispatch = useAppDispatch();
   const { bookingId } = params;
 
+  const { currentUser } = useAppSelector((state) => state.user);
   const {
     currentBooking: booking,
     loading,
@@ -83,166 +57,190 @@ export default function UserBookingDetailsPage() {
     }
   }, [dispatch, bookingId]);
 
-  const handleCancel = () => {
-    if (!booking) return;
-    if (
-      confirm(
-        "Are you sure you want to cancel this booking? Your advance payment will be refunded."
-      )
-    ) {
-      dispatch(cancelAndRefundBooking(booking._id))
-        .unwrap()
-        .then(() =>
-          toast.success("Booking cancelled and refund initiated successfully!")
-        )
-        .catch((err) => toast.error(err || "Failed to cancel booking."));
+  const handleRemainingPayment = async () => {
+    if (!booking || !currentUser) return;
+
+    try {
+      const orderResult = await dispatch(
+        createRemainingPaymentOrder(booking._id)
+      ).unwrap();
+      const order = orderResult;
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: "INR",
+        name: "BookMyTourGuide",
+        description: `Remaining payment for ${
+          typeof booking.tour === "object" && booking.tour.title
+        }`,
+        order_id: order.id,
+        handler: function (response: any) {
+          dispatch(
+            verifyRemainingPayment({
+              ...response,
+              bookingId: booking._id,
+            })
+          );
+        },
+        prefill: {
+          name: currentUser.name,
+          email: currentUser.email,
+          contact: currentUser.mobile || "",
+        },
+        theme: { color: "#FF0000" },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+    } catch (err: any) {
+      toast.error(err.message || "Could not initiate payment.");
     }
   };
 
-  if (loading) {
+  const handleCancelTrip = () => {
+    if (!booking) return;
+    if (
+      confirm("Are you sure you want to cancel? Your payment will be refunded.")
+    ) {
+      dispatch(cancelAndRefundBooking(booking._id))
+        .unwrap()
+        .then(() => toast.success("Your trip has been cancelled successfully."))
+        .catch((err) => toast.error(err || "Failed to cancel trip."));
+    }
+  };
+
+  if (loading && !booking) {
     return (
-      <div className="flex justify-center items-center h-[calc(100vh-80px)]">
-        <Loader2 className="w-16 h-16 animate-spin text-primary" />
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
       </div>
     );
   }
-
-  if (error || !booking) {
+  if (error) {
     return (
-      <div className="text-center py-20">
+      <div className="container max-w-2xl mx-auto text-center py-20">
         <AlertCircle className="w-16 h-16 mx-auto text-destructive mb-4" />
-        <h2 className="text-2xl font-bold">
-          {error ? "Error" : "Booking Not Found"}
-        </h2>
-        <p className="text-muted-foreground">{error}</p>
-        <Button onClick={() => router.back()} className="mt-4">
-          Go Back
+        <h2 className="text-2xl font-bold">Error Loading Booking</h2>
+        <Button asChild className="mt-6">
+          <Link href="/dashboard/user/my-bookings">Go Back</Link>
         </Button>
       </div>
     );
   }
+  if (!booking) return notFound();
 
   const tour = typeof booking.tour === "object" ? booking.tour : null;
   const guide = typeof booking.guide === "object" ? booking.guide : null;
-
-  if (!tour || !guide) {
-    return (
-      <div className="text-center py-20">
-        <AlertCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-        <h2 className="text-2xl font-bold">Incomplete Data</h2>
-        <Button onClick={() => router.back()} className="mt-4">
-          Go Back
-        </Button>
-      </div>
-    );
-  }
+  const originalGuide =
+    typeof booking.originalGuide === "object" ? booking.originalGuide : null;
 
   return (
     <div className="min-h-screen bg-muted/50">
-      <div className="max-w-6xl mx-auto p-4 md:p-8">
-        <Button
-          variant="outline"
-          onClick={() => router.push("/dashboard/user/my-bookings")}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to My Bookings
+      <div className="container max-w-4xl mx-auto px-4 py-12">
+        <Button asChild variant="outline" className="mb-6">
+          <Link href="/dashboard/user/my-bookings">Back to My Bookings</Link>
         </Button>
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold mb-2">
-              {tour.title}
-            </h1>
-            <p className="text-muted-foreground">Booking ID: {booking._id}</p>
-          </div>
-          <Badge
-            variant={getStatusVariant(booking.status)}
-            className="text-md px-4 py-2 w-fit"
-          >
-            {booking.status}
-          </Badge>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardContent className="p-0">
-                <Image
-                  src={tour.images?.[0] || "/placeholder.png"}
-                  alt={tour.title}
-                  width={1200}
-                  height={600}
-                  className="rounded-t-lg object-cover w-full h-80"
+        <Card className="shadow-lg">
+          <CardHeader className="p-6">
+            <div className="flex justify-between items-start gap-4">
+              <div>
+                <CardTitle className="text-3xl font-extrabold">
+                  {tour?.title}
+                </CardTitle>
+                <CardDescription className="flex items-center gap-2 mt-2">
+                  <MapPin className="w-4 h-4" /> {tour?.locations?.join(", ")}
+                </CardDescription>
+              </div>
+              <Badge
+                variant={
+                  booking.status === "Cancelled" ? "destructive" : "default"
+                }
+                className="text-base"
+              >
+                {booking.status}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6 space-y-8">
+            {booking.status === "Upcoming" &&
+              booking.paymentStatus === "Advance Paid" && (
+                <Alert className="bg-primary/10 border-primary/20">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <AlertTitle className="font-bold">
+                    Complete Your Payment
+                  </AlertTitle>
+                  <AlertDescription>
+                    Your trip is confirmed. Please pay the remaining balance of{" "}
+                    <span className="font-bold">
+                      ₹{booking.remainingAmount?.toLocaleString()}
+                    </span>{" "}
+                    to start your tour.
+                  </AlertDescription>
+                  <div className="mt-4 flex flex-wrap gap-4">
+                    <Button onClick={handleRemainingPayment} disabled={loading}>
+                      <CreditCard className="w-4 h-4 mr-2" /> Pay Remaining
+                      Amount
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleCancelTrip}
+                      disabled={loading}
+                    >
+                      <XCircle className="w-4 h-4 mr-2" /> Cancel Trip
+                    </Button>
+                  </div>
+                </Alert>
+              )}
+            {booking.paymentStatus === "Fully Paid" &&
+              booking.status === "Upcoming" && (
+                <Alert variant="success">
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertTitle>All Set!</AlertTitle>
+                  <AlertDescription>
+                    Your payment is complete. Enjoy your trip!
+                  </AlertDescription>
+                </Alert>
+              )}
+            {booking.status === "Cancelled" && (
+              <Alert variant="destructive">
+                <XCircle className="h-4 w-4" />
+                <AlertTitle>Trip Cancelled</AlertTitle>
+                <AlertDescription>
+                  This booking was cancelled and your payment has been refunded.
+                </AlertDescription>
+              </Alert>
+            )}
+            {booking.status === "Completed" && (
+              <Alert>
+                <CheckCircle className="h-4 w-4" />
+                <AlertTitle>Trip Completed</AlertTitle>
+                <AlertDescription>
+                  We hope you had an amazing journey!
+                </AlertDescription>
+              </Alert>
+            )}
+            <div>
+              <h3 className="font-bold text-xl mb-4">Your Assigned Guide</h3>
+              <div className="flex items-center gap-4">
+                <img
+                  src={guide?.photo || "/placeholder.png"}
+                  alt={guide?.name || ""}
+                  className="w-20 h-20 rounded-full object-cover"
                 />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Trip Details</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Start Date</p>
-                  <p className="text-lg font-semibold flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-primary" />
-                    {new Date(booking.startDate).toLocaleDateString()}
-                  </p>
+                <div>
+                  <p className="font-bold text-lg">{guide?.name}</p>
+                  <p className="text-sm text-muted-foreground">Main Guide</p>
+                  {originalGuide && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      (Changed from {originalGuide.name})
+                    </p>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">End Date</p>
-                  <p className="text-lg font-semibold flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-primary" />
-                    {new Date(booking.endDate).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Tourists</p>
-                  <p className="text-lg font-semibold flex items-center gap-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    {booking.numberOfTourists}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Location(s)</p>
-                  <p className="text-lg font-semibold flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-primary" />
-                    {tour.locations?.join(", ") || "N/A"}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Guide Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <GuideInfo guide={guide} />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {booking.status === "Upcoming" ? (
-                  <Button
-                    className="w-full"
-                    variant="destructive"
-                    onClick={handleCancel}
-                    disabled={loading}
-                  >
-                    <Undo2 className="w-4 h-4 mr-2" />
-                    Cancel & Refund
-                  </Button>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center">
-                    This booking cannot be cancelled.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

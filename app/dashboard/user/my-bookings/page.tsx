@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
   fetchMyBookings,
@@ -18,10 +18,12 @@ import {
   Undo2,
   Loader2,
   AlertCircle,
+  Bell,
 } from "lucide-react";
 import type { Booking, BookingStatus } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function MyBookingCard({
   booking,
@@ -40,18 +42,34 @@ function MyBookingCard({
   const getStatusVariant = (status: BookingStatus) => {
     switch (status) {
       case "Upcoming":
-        return "default"; // Upcoming is the default/active state
+        return "default";
       case "Completed":
         return "secondary";
       case "Cancelled":
-        return "destructive"; // Cancelled is a destructive state
+        return "destructive";
       default:
         return "outline";
     }
   };
 
+  const isPaymentDue =
+    booking.status === "Upcoming" && booking.paymentStatus === "Advance Paid";
+
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
+      {isPaymentDue && (
+        <Alert className="border-t-0 border-l-0 border-r-0 rounded-none bg-amber-50 border-amber-200">
+          <Bell className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800 font-bold">
+            Action Required
+          </AlertTitle>
+          <AlertDescription className="text-amber-700">
+            Your remaining payment of{" "}
+            <strong>₹{booking.remainingAmount?.toLocaleString()}</strong> is
+            due. Please complete the payment to start your tour.
+          </AlertDescription>
+        </Alert>
+      )}
       <div className="flex flex-col md:flex-row">
         <div className="md:w-1/3 relative h-60 md:h-auto flex-shrink-0">
           <Image
@@ -88,11 +106,7 @@ function MyBookingCard({
             </div>
             <div className="flex items-center gap-3">
               <MapPin className="w-5 h-5 text-primary" />
-              <span className="font-medium">
-                {Array.isArray(tour.locations) && tour.locations.length > 0
-                  ? tour.locations.join(", ")
-                  : "Location not specified"}
-              </span>
+              <span className="font-medium">{tour.locations?.join(", ")}</span>
             </div>
             <div className="flex items-center gap-3">
               <UserIcon className="w-5 h-5 text-primary" />
@@ -113,12 +127,12 @@ function MyBookingCard({
                   onClick={() => onCancel(booking._id, tour.title)}
                 >
                   <Undo2 className="w-4 h-4 mr-2" />
-                  Cancel & Refund
+                  Cancel
                 </Button>
               )}
               <Button asChild variant="outline">
                 <Link href={`/dashboard/user/my-bookings/${booking._id}`}>
-                  View Tour Details
+                  View Details
                 </Link>
               </Button>
             </div>
@@ -128,7 +142,6 @@ function MyBookingCard({
     </Card>
   );
 }
-
 export default function MyBookingsPage() {
   const dispatch = useAppDispatch();
   const { bookings, loading, error } = useAppSelector(
@@ -142,17 +155,15 @@ export default function MyBookingsPage() {
   const handleCancel = (bookingId: string, tourTitle: string) => {
     if (
       confirm(
-        `Are you sure you want to cancel your booking for "${tourTitle}"? Your advance payment will be refunded.`
+        `Are you sure you want to cancel your booking for "${tourTitle}"? Your payment will be refunded.`
       )
     ) {
       dispatch(cancelAndRefundBooking(bookingId))
         .unwrap()
-        .then(() => {
-          toast.success("Booking cancelled! Refund has been initiated.");
-        })
-        .catch((err) => {
-          toast.error(err || "Failed to cancel booking.");
-        });
+        .then(() =>
+          toast.success("Booking cancelled! Refund has been initiated.")
+        )
+        .catch((err) => toast.error(err || "Failed to cancel booking."));
     }
   };
 
@@ -164,7 +175,6 @@ export default function MyBookingsPage() {
         </div>
       );
     }
-
     if (error) {
       return (
         <div className="text-center py-16">
@@ -174,44 +184,10 @@ export default function MyBookingsPage() {
         </div>
       );
     }
-
-    if (bookings && Array.isArray(bookings) && bookings.length > 0) {
-      const validBookings = bookings.filter((booking) => {
-        if (!booking) return false;
-        const tour =
-          booking.tour && typeof booking.tour === "object"
-            ? booking.tour
-            : null;
-        const guide =
-          booking.guide && typeof booking.guide === "object"
-            ? booking.guide
-            : null;
-        return tour && guide;
-      });
-
-      if (validBookings.length === 0) {
-        // This case handles if data is malformed but exists
-        return (
-          <div className="text-center py-16 px-6 bg-card rounded-xl border">
-            <Ticket className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-3xl font-bold mb-2">No Journeys Yet</h2>
-            <p className="text-muted-foreground text-lg mb-6">
-              You haven't booked any tours.
-            </p>
-            <Button
-              size="lg"
-              asChild
-              className="red-gradient text-white font-bold"
-            >
-              <Link href="/tours">Explore Tours</Link>
-            </Button>
-          </div>
-        );
-      }
-
+    if (bookings && bookings.length > 0) {
       return (
         <div className="space-y-8">
-          {validBookings.map((booking) => (
+          {bookings.map((booking) => (
             <MyBookingCard
               key={booking._id}
               booking={booking}
@@ -221,7 +197,6 @@ export default function MyBookingsPage() {
         </div>
       );
     }
-
     return (
       <div className="text-center py-16 px-6 bg-card rounded-xl border">
         <Ticket className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
@@ -229,7 +204,7 @@ export default function MyBookingsPage() {
         <p className="text-muted-foreground text-lg mb-6">
           You haven't booked any tours.
         </p>
-        <Button size="lg" asChild className="red-gradient text-white font-bold">
+        <Button size="lg" asChild>
           <Link href="/tours">Explore Tours</Link>
         </Button>
       </div>
