@@ -1,16 +1,16 @@
-// app/dashboard/admin/bookings/[bookingId]/page.tsx
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
   fetchBookingById,
   updateBookingStatus,
+  assignSubstituteGuide,
 } from "@/lib/redux/thunks/booking/bookingThunks";
-import { getAllGuides } from "@/lib/redux/thunks/guide/guideThunk"; 
+import { getAllGuides } from "@/lib/redux/thunks/guide/guideThunk"; // Maan rahe hain ki yeh thunk aapke paas hai
 import type { Booking, Guide, BookingStatus } from "@/lib/data";
 import {
   Card,
@@ -37,6 +37,8 @@ import {
   Calendar,
   ArrowLeft,
   Edit,
+  Users,
+  Info,
 } from "lucide-react";
 
 const getStatusVariant = (status: BookingStatus) => {
@@ -47,10 +49,31 @@ const getStatusVariant = (status: BookingStatus) => {
       return "secondary";
     case "Cancelled":
       return "destructive";
+    case "Awaiting Substitute":
+      return "warning";
     default:
       return "outline";
   }
 };
+
+const GuideInfoCard = ({ guide, title }: { guide: Guide; title: string }) => (
+  <CardContent className="space-y-2 pt-4">
+    <p className="text-sm font-semibold text-muted-foreground">{title}</p>
+    <div className="flex items-center gap-3">
+      <Image
+        src={guide.photo || "/placeholder.png"}
+        alt={guide.name}
+        width={48}
+        height={48}
+        className="w-12 h-12 rounded-full object-cover"
+      />
+      <div>
+        <p className="font-semibold">{guide.name}</p>
+        <p className="text-xs text-muted-foreground">{guide.email}</p>
+      </div>
+    </div>
+  </CardContent>
+);
 
 export default function AdminBookingDetailPage() {
   const dispatch = useAppDispatch();
@@ -63,17 +86,17 @@ export default function AdminBookingDetailPage() {
     loading: bookingLoading,
     error: bookingError,
   } = useAppSelector((state) => state.bookings);
-  // Maan rahe hain ki aapke paas guideSlice bhi hai
   const { guides, loading: guidesLoading } = useAppSelector(
     (state) => state.guide
   );
 
   const [newStatus, setNewStatus] = useState<BookingStatus | "">("");
+  const [selectedSubGuide, setSelectedSubGuide] = useState<string>("");
 
   useEffect(() => {
     if (bookingId) {
       dispatch(fetchBookingById(bookingId as string));
-      dispatch(getAllGuides()); // Substitute assign karne ke liye saare guides fetch karein
+      dispatch(getAllGuides());
     }
   }, [dispatch, bookingId]);
 
@@ -86,14 +109,40 @@ export default function AdminBookingDetailPage() {
   const handleStatusUpdate = () => {
     if (!newStatus || newStatus === booking?.status) return;
     dispatch(
-      updateBookingStatus({ bookingId: bookingId as string, status: newStatus })
+      updateBookingStatus({
+        bookingId: bookingId as string,
+        status: newStatus,
+      })
     )
       .unwrap()
       .then(() => toast.success("Booking status updated successfully!"))
       .catch((err) => toast.error(err || "Failed to update status."));
   };
 
-  // Yahaan hum check kar rahe hain ki data load ho raha hai ya nahi
+  const handleAssignSubstitute = () => {
+    if (!selectedSubGuide) {
+      toast.error("Please select a guide to assign.");
+      return;
+    }
+    dispatch(
+      assignSubstituteGuide({
+        bookingId: bookingId as string,
+        substituteGuideId: selectedSubGuide,
+      })
+    )
+      .unwrap()
+      .then(() => {
+        toast.success("Substitute guide assigned successfully!");
+        setSelectedSubGuide("");
+      })
+      .catch((err) => toast.error(err || "Failed to assign guide."));
+  };
+
+  const availableGuides = useMemo(() => {
+    if (!guides || !booking?.guide) return [];
+    return guides.filter((g) => g._id !== booking.guide._id);
+  }, [guides, booking]);
+
   if (bookingLoading || guidesLoading) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-80px)]">
@@ -102,7 +151,6 @@ export default function AdminBookingDetailPage() {
     );
   }
 
-  // Error handling
   if (bookingError) {
     return (
       <div className="text-center py-20">
@@ -113,7 +161,6 @@ export default function AdminBookingDetailPage() {
     );
   }
 
-  // Agar booking nahi milti hai
   if (!booking) {
     return (
       <div className="text-center py-20">
@@ -123,15 +170,16 @@ export default function AdminBookingDetailPage() {
   }
 
   const tour = typeof booking.tour === "object" ? booking.tour : null;
-  const guide = typeof booking.guide === "object" ? booking.guide : null;
   const user = typeof booking.user === "object" ? booking.user : null;
+  const guide = typeof booking.guide === "object" ? booking.guide : null;
+  const originalGuide =
+    typeof booking.originalGuide === "object" ? booking.originalGuide : null;
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
       <Button variant="outline" onClick={() => router.back()} className="mb-6">
         <ArrowLeft className="w-4 h-4 mr-2" /> Back to All Bookings
       </Button>
-
       <div className="flex justify-between items-start mb-4">
         <h1 className="text-3xl md:text-4xl font-extrabold">{tour?.title}</h1>
         <Badge
@@ -142,9 +190,39 @@ export default function AdminBookingDetailPage() {
         </Badge>
       </div>
       <p className="text-muted-foreground mb-8">Booking ID: {booking._id}</p>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+          {["Upcoming", "Awaiting Substitute"].includes(booking.status) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Assign Substitute Guide</CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center gap-4">
+                <Select
+                  value={selectedSubGuide}
+                  onValueChange={setSelectedSubGuide}
+                >
+                  <SelectTrigger className="w-full md:w-[280px]">
+                    <SelectValue placeholder="Select a new guide" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableGuides.map((g) => (
+                      <SelectItem key={g._id} value={g._id}>
+                        {g.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={handleAssignSubstitute}
+                  disabled={!selectedSubGuide || bookingLoading}
+                >
+                  <Users className="w-4 h-4 mr-2" /> Assign
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Update Booking Status</CardTitle>
@@ -161,35 +239,40 @@ export default function AdminBookingDetailPage() {
                   <SelectItem value="Upcoming">Upcoming</SelectItem>
                   <SelectItem value="Completed">Completed</SelectItem>
                   <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  <SelectItem value="Awaiting Substitute">
+                    Awaiting Substitute
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <Button
                 onClick={handleStatusUpdate}
-                disabled={newStatus === booking.status}
+                disabled={newStatus === booking.status || bookingLoading}
               >
                 <Edit className="w-4 h-4 mr-2" /> Update Status
               </Button>
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader>
-              <CardTitle>Booking Summary</CardTitle>
+              <CardTitle>Booking Info</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 text-lg">
-              <div className="flex items-center gap-3">
-                <Calendar className="w-6 h-6 text-primary" />
-                <p>
-                  <strong>Dates:</strong>{" "}
+            <CardContent className="space-y-4">
+              <p className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-primary" />
+                <span>
                   {new Date(booking.startDate).toLocaleDateString()} to{" "}
                   {new Date(booking.endDate).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <UserIcon className="w-6 h-6 text-primary" />
-                <p>
-                  <strong>Guests:</strong> {booking.numberOfTourists}
-                </p>
-              </div>
+                </span>
+              </p>
+              <p className="flex items-center gap-3">
+                <Users className="w-5 h-5 text-primary" />
+                <span>{booking.numberOfTourists} Tourists</span>
+              </p>
+              <p className="flex items-center gap-3 font-bold">
+                <span className="text-primary">Total Price:</span>
+                <span>₹{booking.totalPrice.toLocaleString()}</span>
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -214,25 +297,25 @@ export default function AdminBookingDetailPage() {
               )}
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader>
-              <CardTitle>Assigned Guide</CardTitle>
+              <CardTitle>Guide Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center gap-3">
-                <Image
-                  src={guide?.photo || "/placeholder.png"}
-                  alt={guide?.name || "Guide"}
-                  width={48}
-                  height={48}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div>
-                  <p className="font-semibold">{guide?.name}</p>
-                  <p className="text-xs text-muted-foreground">Main Guide</p>
-                </div>
-              </div>
-            </CardContent>
+            {guide && (
+              <GuideInfoCard
+                guide={guide}
+                title={
+                  originalGuide
+                    ? "Substitute Guide (Current)"
+                    : "Assigned Guide"
+                }
+              />
+            )}
+            {originalGuide && <div className="mx-6 my-2 border-t"></div>}
+            {originalGuide && (
+              <GuideInfoCard guide={originalGuide} title="Original Guide" />
+            )}
           </Card>
         </div>
       </div>
