@@ -9,7 +9,8 @@ import {
   deleteBooking,
   cancelAndRefundBooking,
 } from "@/lib/redux/thunks/booking/bookingThunks";
-import type { Booking, BookingStatus } from "@/lib/data";
+// ✅ PaymentStatus type ko import karein ya define karein
+import type { Booking, BookingStatus, PaymentStatus } from "@/lib/data";
 import {
   Search,
   Filter,
@@ -41,6 +42,23 @@ const getStatusVariant = (status: BookingStatus) => {
       return "secondary";
     case "Cancelled":
       return "destructive";
+    case "Awaiting Substitute":
+      return "warning";
+    default:
+      return "outline";
+  }
+};
+
+// ✅ NAYA HELPER FUNCTION: Payment status ke liye colors define karne ke liye
+// Note: 'success' aur 'warning' variants aapke Badge component mein custom defined hone chahiye.
+const getPaymentStatusVariant = (status: PaymentStatus) => {
+  switch (status) {
+    case "Fully Paid":
+      return "success"; // Green color
+    case "Advance Paid":
+      return "warning"; // Yellow/Orange color
+    case "Refunded":
+      return "secondary"; // Gray color
     default:
       return "outline";
   }
@@ -139,9 +157,15 @@ export default function AllBookingsPage() {
                   <TableHead className="whitespace-nowrap">Guide</TableHead>
                   <TableHead className="whitespace-nowrap">Dates</TableHead>
                   <TableHead className="whitespace-nowrap">
-                    Total Paid
+                    Total Price
                   </TableHead>
-                  <TableHead className="whitespace-nowrap">Status</TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    Booking Status
+                  </TableHead>
+                  {/* ✅ NAYA COLUMN HEADER */}
+                  <TableHead className="whitespace-nowrap">
+                    Payment Status
+                  </TableHead>
                   <TableHead className="text-right whitespace-nowrap">
                     Actions
                   </TableHead>
@@ -201,6 +225,18 @@ export default function AllBookingsPage() {
                             {booking.status}
                           </Badge>
                         </TableCell>
+                        {/* ✅ NAYI CELL PAYMENT STATUS KE LIYE */}
+                        <TableCell>
+                          {booking.paymentStatus && (
+                            <Badge
+                              variant={getPaymentStatusVariant(
+                                booking.paymentStatus
+                              )}
+                            >
+                              {booking.paymentStatus}
+                            </Badge>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button asChild variant="outline" size="sm">
@@ -244,7 +280,8 @@ export default function AllBookingsPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center">
+                    {/* ✅ COLSPAN KO 8 KARNA ZARURI HAI */}
+                    <TableCell colSpan={8} className="h-32 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <Ticket className="w-8 h-8 text-muted-foreground" />
                         <p>No bookings match your criteria.</p>

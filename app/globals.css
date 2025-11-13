@@ -23,7 +23,7 @@
   --muted: #ffffff; /* Light gray background */
   --muted-foreground: oklch(0.35 0 0);
 
-  --accent: oklch(0.6 0.25 25); /* Red accent */
+  --accent: #f4acb6; /* Red accent */
   --accent-foreground: oklch(1 0 0);
 
   --destructive: oklch(0.55 0.22 25); /* Slightly darker red */
