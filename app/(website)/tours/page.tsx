@@ -1,4 +1,3 @@
-// app/tours/page.tsx
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -18,6 +17,7 @@ import { RootState, AppDispatch } from "@/lib/store";
 import { fetchPackages } from "@/lib/redux/thunks/admin/packageThunks";
 import { fetchAdminLocations } from "@/lib/redux/thunks/admin/locationThunks";
 import { Card } from "@/components/ui/card";
+import { useLanguage } from "@/contexts/LanguageContext"; // LanguageContext import karein
 
 // A skeleton component to show while loading
 const TourCardSkeleton = () => (
@@ -38,6 +38,7 @@ const TourCardSkeleton = () => (
 export default function ToursPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("all");
+  const { t } = useLanguage(); // Language hook ka istemal karein
 
   const dispatch = useDispatch<AppDispatch>();
   const {
@@ -50,12 +51,10 @@ export default function ToursPage() {
   );
 
   useEffect(() => {
-    // Fetch initial data when the component mounts
     dispatch(fetchPackages());
     dispatch(fetchAdminLocations());
   }, [dispatch]);
 
-  // Memoize the locations list to prevent re-computation
   const locations = useMemo(() => {
     const uniqueLocations = [
       ...new Set(adminLocations.map((loc) => loc.placeName.toLowerCase())),
@@ -63,7 +62,6 @@ export default function ToursPage() {
     return ["all", ...uniqueLocations];
   }, [adminLocations]);
 
-  // Memoize the filtered tours to optimize performance
   const filteredTours = useMemo(() => {
     return tours.filter((tour) => {
       const matchesSearch =
@@ -93,7 +91,7 @@ export default function ToursPage() {
       return (
         <div className="text-center py-16">
           <h2 className="text-2xl font-bold mb-2 text-destructive">
-            Failed to Load Tours
+            {t("tours_failed_title")}
           </h2>
           <p className="text-muted-foreground">{toursError}</p>
         </div>
@@ -122,10 +120,10 @@ export default function ToursPage() {
 
     return (
       <div className="text-center py-16">
-        <h2 className="text-2xl font-bold mb-2">No Tours Found</h2>
-        <p className="text-muted-foreground">
-          Try adjusting your search or filters.
-        </p>
+        <h2 className="text-2xl font-bold mb-2">
+          {t("tours_not_found_title")}
+        </h2>
+        <p className="text-muted-foreground">{t("tours_not_found_desc")}</p>
       </div>
     );
   };
@@ -134,9 +132,9 @@ export default function ToursPage() {
     <div className="min-h-screen bg-background">
       <main>
         <HeroSection
-          badgeText="Explore Tours"
-          title="Discover India's Hidden Gems"
-          description="Browse curated experiences led by verified local guides and uncover the heart of every destination."
+          badgeText={t("tours_badge")}
+          title={t("tours_title")}
+          description={t("tours_desc")}
           backgroundImage="/3.jpg"
         />
 
@@ -146,7 +144,7 @@ export default function ToursPage() {
               <div className="relative flex-1 w-full">
                 <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
                 <Input
-                  placeholder="Search by name or description..."
+                  placeholder={t("tours_search_placeholder")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-12 h-12 text-base"
@@ -157,7 +155,7 @@ export default function ToursPage() {
                 onValueChange={setSelectedLocation}
               >
                 <SelectTrigger className="w-full md:w-56 h-12 text-base">
-                  <SelectValue placeholder="Filter by Location" />
+                  <SelectValue placeholder={t("tours_filter_placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {locations.map((location) => (
@@ -166,7 +164,7 @@ export default function ToursPage() {
                       value={location}
                       className="capitalize"
                     >
-                      {location === "all" ? "All Locations" : location}
+                      {location === "all" ? t("tours_all_locations") : location}
                     </SelectItem>
                   ))}
                 </SelectContent>
