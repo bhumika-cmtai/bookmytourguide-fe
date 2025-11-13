@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge"; // YEH LINE ADD KARNI THI
 import {
   Search,
   UserCheck,
@@ -20,62 +20,63 @@ import {
   Phone,
   Users,
   Award,
+  ArrowRight,
 } from "lucide-react";
 import Image from "next/image";
 import HeroSection from "@/components/all/CommonHeroSection";
+import Link from "next/link";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function HowItWorksPage() {
+  const { t } = useLanguage();
+
   const steps = [
     {
       step: 1,
       icon: <Search className="w-8 h-8" />,
-      title: "Search & Browse",
-      description:
-        "Browse our curated selection of tours and guides based on your interests, location, and dates.",
-      details: [
-        "Filter by tour type, location, and price",
-        "Read guide profiles and reviews",
-        "View detailed itineraries",
-        "Check availability in real-time",
+      titleKey: "how_step_1_title",
+      descriptionKey: "how_step_1_desc",
+      detailsKeys: [
+        "how_step_1_detail_1",
+        "how_step_1_detail_2",
+        "how_step_1_detail_3",
+        "how_step_1_detail_4",
       ],
     },
     {
       step: 2,
       icon: <UserCheck className="w-8 h-8" />,
-      title: "Choose Your Guide",
-      description:
-        "Select from our verified local guides who match your preferences and tour requirements.",
-      details: [
-        "All guides are background verified",
-        "View ratings and authentic reviews",
-        "Check language preferences",
-        "See specialization areas",
+      titleKey: "how_step_2_title",
+      descriptionKey: "how_step_2_desc",
+      detailsKeys: [
+        "how_step_2_detail_1",
+        "how_step_2_detail_2",
+        "how_step_2_detail_3",
+        "how_step_2_detail_4",
       ],
     },
     {
       step: 3,
       icon: <CreditCard className="w-8 h-8" />,
-      title: "Secure Booking",
-      description:
-        "Book your tour with a small advance payment. Pay the remaining amount after tour completion.",
-      details: [
-        "Pay only 20-30% advance",
-        "Secure payment gateway",
-        "Instant booking confirmation",
-        "Free cancellation up to 24 hours",
+      titleKey: "how_step_3_title",
+      descriptionKey: "how_step_3_desc",
+      detailsKeys: [
+        "how_step_3_detail_1",
+        "how_step_3_detail_2",
+        "how_step_3_detail_3",
+        "how_step_3_detail_4",
       ],
     },
     {
       step: 4,
       icon: <MapPin className="w-8 h-8" />,
-      title: "Enjoy Your Tour",
-      description:
-        "Meet your guide at the designated location and embark on your authentic Indian adventure.",
-      details: [
-        "GPS tracking for safety",
-        "24/7 emergency support",
-        "Flexible tour customization",
-        "Professional guide service",
+      titleKey: "how_step_4_title",
+      descriptionKey: "how_step_4_desc",
+      detailsKeys: [
+        "how_step_4_detail_1",
+        "how_step_4_detail_2",
+        "how_step_4_detail_3",
+        "how_step_4_detail_4",
       ],
     },
   ];
@@ -83,97 +84,94 @@ export default function HowItWorksPage() {
   const safetyFeatures = [
     {
       icon: <Shield className="w-6 h-6 text-primary" />,
-      title: "Verified Guides",
-      description:
-        "Background checks, ID verification, and professional training",
+      titleKey: "how_safety_feat_1_title",
+      descriptionKey: "how_safety_feat_1_desc",
     },
     {
       icon: <Phone className="w-6 h-6 text-secondary" />,
-      title: "24/7 Support",
-      description: "Emergency helpline available throughout your tour",
+      titleKey: "how_safety_feat_2_title",
+      descriptionKey: "how_safety_feat_2_desc",
     },
     {
       icon: <MapPin className="w-6 h-6 text-accent" />,
-      title: "GPS Tracking",
-      description: "Real-time location sharing for added security",
+      titleKey: "how_safety_feat_3_title",
+      descriptionKey: "how_safety_feat_3_desc",
     },
     {
       icon: <Star className="w-6 h-6 text-green-600" />,
-      title: "Quality Assurance",
-      description: "Regular monitoring and feedback system",
+      titleKey: "how_safety_feat_4_title",
+      descriptionKey: "how_safety_feat_4_desc",
     },
   ];
 
   const paymentProcess = [
     {
       step: "1",
-      title: "Advance Payment",
-      description: "Pay 20-30% to confirm booking",
-      amount: "₹500-1000",
-      timing: "At booking",
+      titleKey: "how_payment_step_1_title",
+      descriptionKey: "how_payment_step_1_desc",
+      amountKey: "how_payment_step_1_amount",
+      timingKey: "how_payment_step_1_timing",
     },
     {
       step: "2",
-      title: "Tour Completion",
-      description: "Enjoy your tour experience",
-      amount: "Experience",
-      timing: "During tour",
+      titleKey: "how_payment_step_2_title",
+      descriptionKey: "how_payment_step_2_desc",
+      amountKey: "how_payment_step_2_amount",
+      timingKey: "how_payment_step_2_timing",
     },
     {
       step: "3",
-      title: "Final Payment",
-      description: "Pay remaining amount to guide",
-      amount: "₹1500-3000",
-      timing: "After tour",
+      titleKey: "how_payment_step_3_title",
+      descriptionKey: "how_payment_step_3_desc",
+      amountKey: "how_payment_step_3_amount",
+      timingKey: "how_payment_step_3_timing",
     },
     {
       step: "4",
-      title: "Review & Rate",
-      description: "Share your experience",
-      amount: "Feedback",
-      timing: "Post tour",
+      titleKey: "how_payment_step_4_title",
+      descriptionKey: "how_payment_step_4_desc",
+      amountKey: "how_payment_step_4_amount",
+      timingKey: "how_payment_step_4_timing",
     },
   ];
 
   const guideProcess = [
     {
       step: "1",
-      title: "Application",
-      description: "Submit your profile and documents for verification",
+      titleKey: "how_guide_step_1_title",
+      descriptionKey: "how_guide_step_1_desc",
     },
     {
       step: "2",
-      title: "Verification",
-      description: "Background check, interview, and document validation",
+      titleKey: "how_guide_step_2_title",
+      descriptionKey: "how_guide_step_2_desc",
     },
     {
       step: "3",
-      title: "Training",
-      description: "Complete our guide certification program",
+      titleKey: "how_guide_step_3_title",
+      descriptionKey: "how_guide_step_3_desc",
     },
     {
       step: "4",
-      title: "Go Live",
-      description: "Start receiving bookings and earning money",
+      titleKey: "how_guide_step_4_title",
+      descriptionKey: "how_guide_step_4_desc",
     },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="pt-20">
-        {/* Hero Section */}
+      <main>
         <HeroSection
-          badgeText="How It Works"
-          title="Simple Steps to Plan Your Perfect Trip"
-          description="From choosing a guide to booking your next adventure — discover how easy it is to travel with BookMyTourGuide."
+          badgeText={t("how_badge")}
+          title={t("how_title")}
+          description={t("how_desc")}
           backgroundImage="/3.jpg"
         />
 
-        {/* Main Process Steps */}
-        <section className="py-16">
+        <section className="py-16 md:py-24">
           <div className="container max-w-7xl mx-auto px-4">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-              Book Your Perfect Tour in 4 Easy Steps
+              {t("how_section_1_title")}
             </h2>
             <div className="space-y-16">
               {steps.map((step, index) => (
@@ -187,12 +185,10 @@ export default function HowItWorksPage() {
                     className="flex-1 animate-fade-in-up"
                     style={{ animationDelay: `${index * 0.2}s` }}
                   >
-                    <div className="relative h-64 md:h-80 rounded-lg overflow-hidden">
+                    <div className="relative h-64 md:h-80 rounded-lg overflow-hidden shadow-lg">
                       <Image
-                        src={`/${
-                          step.step
-                        }.jpg`}
-                        alt={step.title}
+                        src={`/${step.step}.jpg`}
+                        alt={t(step.titleKey)}
                         fill
                         className="object-cover"
                       />
@@ -203,22 +199,22 @@ export default function HowItWorksPage() {
                     style={{ animationDelay: `${index * 0.2 + 0.1}s` }}
                   >
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center text-2xl font-bold">
+                      <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-2xl font-bold flex-shrink-0">
                         {step.step}
                       </div>
                       <div className="text-primary">{step.icon}</div>
                     </div>
                     <h3 className="text-2xl md:text-3xl font-bold mb-4">
-                      {step.title}
+                      {t(step.titleKey)}
                     </h3>
                     <p className="text-lg text-muted-foreground mb-6">
-                      {step.description}
+                      {t(step.descriptionKey)}
                     </p>
                     <ul className="space-y-2">
-                      {step.details.map((detail, idx) => (
+                      {step.detailsKeys.map((detailKey, idx) => (
                         <li key={idx} className="flex items-center gap-3">
                           <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                          <span>{detail}</span>
+                          <span>{t(detailKey)}</span>
                         </li>
                       ))}
                     </ul>
@@ -229,34 +225,35 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-        {/* Payment Process */}
-        <section className="py-16 bg-card">
+        <section className="py-16 md:py-24 bg-card border-y">
           <div className="container max-w-7xl mx-auto px-4">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-              Transparent Payment Process
+              {t("how_payment_title")}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {paymentProcess.map((payment, index) => (
                 <Card
                   key={index}
-                  className="text-center hover:shadow-lg transition-shadow animate-fade-in-up"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className="text-center hover:shadow-xl transition-shadow duration-300 animate-fade-in-up border-0"
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <CardHeader>
-                    <div className="w-12 h-12 bg-secondary text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                    <div className="w-12 h-12 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
                       {payment.step}
                     </div>
-                    <CardTitle className="text-lg">{payment.title}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {t(payment.titleKey)}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground mb-3">
-                      {payment.description}
+                      {t(payment.descriptionKey)}
                     </p>
                     <Badge variant="outline" className="mb-2">
-                      {payment.amount}
+                      {t(payment.amountKey)}
                     </Badge>
                     <p className="text-sm text-muted-foreground">
-                      {payment.timing}
+                      {t(payment.timingKey)}
                     </p>
                   </CardContent>
                 </Card>
@@ -265,35 +262,35 @@ export default function HowItWorksPage() {
             <div className="text-center mt-8">
               <p className="text-lg text-muted-foreground">
                 <Shield className="w-5 h-5 inline mr-2" />
-                Secure payments • No hidden charges • Full refund on
-                cancellation
+                {t("how_payment_footer")}
               </p>
             </div>
           </div>
         </section>
 
-        {/* Safety Features */}
-        <section className="py-16">
+        <section className="py-16 md:py-24">
           <div className="container max-w-7xl mx-auto px-4">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-              Your Safety is Our Priority
+              {t("how_safety_title")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {safetyFeatures.map((feature, index) => (
                 <Card
                   key={index}
-                  className="text-center hover:shadow-lg transition-shadow animate-fade-in-up"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className="text-center hover:shadow-xl transition-shadow duration-300 animate-fade-in-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <CardHeader>
                     <div className="flex justify-center mb-4">
                       {feature.icon}
                     </div>
-                    <CardTitle className="text-lg">{feature.title}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {t(feature.titleKey)}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <CardDescription className="text-center">
-                      {feature.description}
+                      {t(feature.descriptionKey)}
                     </CardDescription>
                   </CardContent>
                 </Card>
@@ -302,120 +299,110 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-        {/* For Guides Section */}
-        <section className="py-16 bg-card">
+        <section className="py-16 md:py-24 bg-card border-y">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-                Want to Become a Guide?
+                {t("how_for_guides_title")}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
                 {guideProcess.map((process, index) => (
                   <div
                     key={index}
                     className="text-center animate-fade-in-up"
-                    style={{ animationDelay: `${index * 0.1}s` }}
+                    style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                    <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
                       {process.step}
                     </div>
                     <h3 className="text-lg font-semibold mb-2">
-                      {process.title}
+                      {t(process.titleKey)}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {process.description}
+                      {t(process.descriptionKey)}
                     </p>
                   </div>
                 ))}
               </div>
               <div className="text-center">
-                <Button
-                  size="lg"
-                  className="bg-secondary hover:bg-secondary/90"
-                >
-                  Apply to Become a Guide
-                </Button>
+                <Link href="/guides/register" passHref>
+                  <Button
+                    size="lg"
+                    className="bg-secondary hover:bg-secondary/90"
+                  >
+                    {t("how_for_guides_button")}
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
         </section>
 
-        {/* FAQ Section */}
-        <section className="py-16">
+        <section className="py-16 md:py-24">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-              Frequently Asked Questions
+              {t("how_faq_title")}
             </h2>
             <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
               <Card className="animate-fade-in-up">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Users className="w-5 h-5 text-primary" />
-                    For Travelers
+                    {t("how_faq_travelers")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-semibold mb-1">
-                        Can I cancel my booking?
-                      </h4>
+                      <h4 className="font-semibold mb-1">{t("how_faq_q1")}</h4>
                       <p className="text-sm text-muted-foreground">
-                        Yes, free cancellation up to 24 hours before the tour.
+                        {t("how_faq_a1")}
                       </p>
                     </div>
                     <div>
-                      <h4 className="font-semibold mb-1">
-                        Are guides verified?
-                      </h4>
+                      <h4 className="font-semibold mb-1">{t("how_faq_q2")}</h4>
                       <p className="text-sm text-muted-foreground">
-                        All guides undergo background checks and certification.
+                        {t("how_faq_a2")}
                       </p>
                     </div>
                     <div>
-                      <h4 className="font-semibold mb-1">
-                        What if I need help during the tour?
-                      </h4>
+                      <h4 className="font-semibold mb-1">{t("how_faq_q3")}</h4>
                       <p className="text-sm text-muted-foreground">
-                        24/7 emergency support is available via phone.
+                        {t("how_faq_a3")}
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="animate-fade-in-up animate-delay-200">
+              <Card
+                className="animate-fade-in-up"
+                style={{ animationDelay: "200ms" }}
+              >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Award className="w-5 h-5 text-secondary" />
-                    For Guides
+                    {t("how_faq_guides")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-semibold mb-1">
-                        How much can I earn?
-                      </h4>
+                      <h4 className="font-semibold mb-1">{t("how_faq_q4")}</h4>
                       <p className="text-sm text-muted-foreground">
-                        ₹500-2000 per hour based on experience and tour type.
+                        {t("how_faq_a4")}
                       </p>
                     </div>
                     <div>
-                      <h4 className="font-semibold mb-1">
-                        When do I get paid?
-                      </h4>
+                      <h4 className="font-semibold mb-1">{t("how_faq_q5")}</h4>
                       <p className="text-sm text-muted-foreground">
-                        Payment is received directly from travelers after tour
-                        completion.
+                        {t("how_faq_a5")}
                       </p>
                     </div>
                     <div>
-                      <h4 className="font-semibold mb-1">
-                        Can I set my own schedule?
-                      </h4>
+                      <h4 className="font-semibold mb-1">{t("how_faq_q6")}</h4>
                       <p className="text-sm text-muted-foreground">
-                        Yes, you have full control over your availability.
+                        {t("how_faq_a6")}
                       </p>
                     </div>
                   </div>
@@ -425,30 +412,32 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-        {/* CTA Section */}
         <section className="py-16 heritage-gradient text-white">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Ready to Start Your Journey?
+              {t("how_cta_title")}
             </h2>
             <p className="text-xl mb-8 max-w-2xl mx-auto">
-              Join thousands of travelers who have discovered authentic India
-              through our platform.
+              {t("how_cta_desc")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-white text-secondary hover:bg-gray-100"
-              >
-                Book Your First Tour
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white hover:text-secondary bg-transparent"
-              >
-                Explore All Tours
-              </Button>
+              <Link href="/tours" passHref>
+                <Button
+                  size="lg"
+                  className="bg-white text-secondary hover:bg-gray-100"
+                >
+                  {t("how_cta_button1")}
+                </Button>
+              </Link>
+              <Link href="/tours" passHref>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-white text-white hover:bg-white hover:text-secondary bg-transparent"
+                >
+                  {t("how_cta_button2")}
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
