@@ -1,5 +1,4 @@
 // File: lib/redux/thunks/booking/bookingThunks.ts
-
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { apiService } from "@/lib/service/api";
 import {
@@ -125,6 +124,20 @@ export const fetchMyBookings = createAsyncThunk<Booking[]>(
 );
 
 // ✅ YEH FUNCTION ADD KIYA GAYA HAI JO MISSING THA
+export const fetchAllBookings = createAsyncThunk<Booking[]>(
+  "bookings/fetchAll",
+  async (_, { rejectWithValue }) => {
+    try {
+      // Assuming you have an admin endpoint to get all bookings
+      const response = await apiService.get<Booking[]>("/api/bookings/all");
+      return response.data || [];
+    } catch (error: any) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  }
+);
+// --- YAHAN TAK NAYA CODE HAI ---
+
 export const fetchGuideBookings = createAsyncThunk<Booking[]>(
   "bookings/fetchForGuide",
   async (_, { rejectWithValue }) => {

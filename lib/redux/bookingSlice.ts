@@ -12,6 +12,8 @@ import {
   fetchBookingById,
   cancelAndRefundBooking,
   fetchGuideBookings,
+  fetchAllBookings, // ✅ Isse import karein
+  deleteBooking, // ✅ Isse bhi import kar lein, component mein use ho raha hai
 } from "./thunks/booking/bookingThunks";
 interface BookingState {
   bookings: Booking[];
@@ -40,7 +42,7 @@ const bookingSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // --- Existing Cases (No changes needed here) ---
+      // --- Existing Cases ---
       .addCase(verifyPaymentAndCreateBooking.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -75,6 +77,24 @@ const bookingSlice = createSlice({
       })
 
       // ✅ --- YEH NAYA CODE ADD KIYA GAYA HAI ---
+      // --- fetchAllBookings Cases (for Admin) ---
+      .addCase(fetchAllBookings.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchAllBookings.fulfilled,
+        (state, action: PayloadAction<Booking[]>) => {
+          state.loading = false;
+          state.bookings = action.payload;
+        }
+      )
+      .addCase(fetchAllBookings.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // --- YAHAN TAK NAYA CODE HAI ---
+
       // --- fetchGuideBookings Cases ---
       .addCase(fetchGuideBookings.pending, (state) => {
         state.loading = true;
@@ -84,7 +104,6 @@ const bookingSlice = createSlice({
         fetchGuideBookings.fulfilled,
         (state, action: PayloadAction<Booking[]>) => {
           state.loading = false;
-          // action.payload ab aapka bookings ka array hai, use state mein set karein
           state.bookings = action.payload;
         }
       )
@@ -92,7 +111,6 @@ const bookingSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // --- YAHAN TAK NAYA CODE HAI ---
 
       .addCase(fetchBookingById.pending, (state) => {
         state.loading = true;
@@ -110,9 +128,9 @@ const bookingSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
+
       .addCase(cancelAndRefundBooking.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        // Aap loading state manage kar sakte hain, maybe a specific one
       })
       .addCase(
         cancelAndRefundBooking.fulfilled,
@@ -131,6 +149,24 @@ const bookingSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
+
+      // ✅ --- DELETE BOOKING KE LIYE BHI LOGIC ADD KARNA ZARURI HAI ---
+      .addCase(deleteBooking.pending, (state) => {
+        // Optional: Manage loading state for a specific item
+      })
+      .addCase(
+        deleteBooking.fulfilled,
+        (state, action: PayloadAction<string>) => {
+          state.bookings = state.bookings.filter(
+            (b) => b._id !== action.payload
+          );
+        }
+      )
+      .addCase(deleteBooking.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+      // --- YAHAN TAK DELETE KA CODE HAI ---
+
       .addCase(createRemainingPaymentOrder.pending, (state) => {
         state.loading = true;
       })
