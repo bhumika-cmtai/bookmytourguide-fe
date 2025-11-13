@@ -6,7 +6,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/lib/store';
 import { fetchUserBookings, cancelBooking } from '@/lib/redux/thunks/tourGuideBooking/userTourGuideBookingThunks';
 import { useRouter } from 'next/navigation';
-import { tourGuideBooking } from '@/lib/data'; // Assuming your type is here
+import { tourGuideBooking } from '@/lib/data';
+import { AlertCircle } from 'lucide-react';
 
 const UserTourGuideBookingsPage = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -29,7 +30,13 @@ const UserTourGuideBookingsPage = () => {
   if (loading) return <p className="text-center p-4">Loading your bookings...</p>;
   if (error) return <p className="text-center p-4 text-red-500">Error: {error}</p>;
   if (!bookings || bookings.length === 0) {
-    return <p className="text-center p-4">You have no tour guide bookings yet.</p>;
+    return (
+      <div className="container mx-auto p-4 text-center">
+        <AlertCircle className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+        <h2 className="text-xl font-semibold mb-2">No Bookings Yet</h2>
+        <p className="text-gray-600">You have no tour guide bookings yet.</p>
+      </div>
+    );
   }
 
   return (
@@ -43,20 +50,39 @@ const UserTourGuideBookingsPage = () => {
               <th className="py-3 px-4 text-left">Guide</th>
               <th className="py-3 px-4 text-left">Location</th>
               <th className="py-3 px-4 text-left">Dates</th>
+              <th className="py-3 px-4 text-center">Payment Status</th>
+              <th className="py-3 px-4 text-right">Amount Due</th>
               <th className="py-3 px-4 text-center">Status</th>
               <th className="py-3 px-4 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             {bookings.map((booking: tourGuideBooking) => (
-              <tr key={booking._id} className="text-center border-t hover:bg-gray-50">
-                {/* ✅ FIX APPLIED HERE */}
+              <tr key={booking._id} className="border-t hover:bg-gray-50">
                 <td className="py-3 px-4 text-left">
                   {typeof booking.guide === 'object' ? booking.guide.name : 'N/A'}
                 </td>
                 <td className="py-3 px-4 text-left">{booking.location}</td>
                 <td className="py-3 px-4 text-left">
                   {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
+                </td>
+                <td className="py-3 px-4 text-center">
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      booking.paymentStatus === 'Fully Paid' ? 'bg-green-200 text-green-800' :
+                      booking.paymentStatus === 'Advance Paid' ? 'bg-yellow-200 text-yellow-800' :
+                      'bg-gray-200 text-gray-800'
+                  }`}>
+                      {booking.paymentStatus}
+                  </span>
+                </td>
+                <td className="py-3 px-4 text-right">
+                  {booking.remainingAmount > 0 ? (
+                    <span className="font-bold text-orange-600">
+                      ₹{booking.remainingAmount.toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className="text-green-600 font-semibold">Paid</span>
+                  )}
                 </td>
                 <td className="py-3 px-4 text-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -74,6 +100,14 @@ const UserTourGuideBookingsPage = () => {
                   >
                     View
                   </button>
+                  {booking.status === 'Upcoming' && booking.remainingAmount > 0 && (
+                    <button 
+                      onClick={() => router.push(`/dashboard/user/tour-guide-booking/${booking._id}`)}
+                      className="text-green-600 hover:text-green-900 font-medium"
+                    >
+                      Pay Now
+                    </button>
+                  )}
                   {booking.status === 'Upcoming' && (
                     <button 
                       onClick={() => handleCancel(booking._id)}
@@ -94,7 +128,7 @@ const UserTourGuideBookingsPage = () => {
         <button 
           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
           disabled={currentPage === 1 || loading}
-          className="px-4 py-2 mx-1 bg-gray-200 rounded disabled:opacity-50"
+          className="px-4 py-2 mx-1 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
         >
           Previous
         </button>
@@ -104,7 +138,7 @@ const UserTourGuideBookingsPage = () => {
         <button 
           onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.totalPages))}
           disabled={currentPage === pagination.totalPages || loading}
-          className="px-4 py-2 mx-1 bg-gray-200 rounded disabled:opacity-50"
+          className="px-4 py-2 mx-1 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
         >
           Next
         </button>

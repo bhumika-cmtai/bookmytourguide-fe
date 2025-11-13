@@ -3,6 +3,13 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { apiService } from "@/lib/service/api";
 import { tourGuideBooking as Booking } from "@/lib/data";
 
+
+const handleThunkError = (error: any, rejectWithValue: Function) => {
+  const message = error.response?.data?.message || error.message || "An unknown error occurred";
+  console.error("Thunk Error:", message, error);
+  return rejectWithValue(message);
+};
+
 interface FetchParams {
   page: number;
   limit: number;
@@ -160,3 +167,49 @@ export const fetchMyGuideBookingByIdThunk = createAsyncThunk<
     return rejectWithValue(error.message || "Failed to fetch booking details.");
   }
 });
+
+// --- THUNKS FOR FINAL PAYMENT FLOW ---
+
+// Step 1 of Payment: Creates the Razorpay order on the backend
+export const createFinalPaymentOrder = createAsyncThunk<any, string, { rejectValue: string }>(
+  "userBookings/createFinalOrder",
+  async (bookingId, { rejectWithValue }) => {
+    try {
+      const response = await apiService.post<{ data: any }>(`/api/tourguide/${bookingId}/create-final-order`);
+      return response.data; // Returns the full Razorpay order object
+    } catch (error: any) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  }
+);
+
+// Step 2 of Payment: Verifies the payment details with the backend
+export const verifyFinalPayment = createAsyncThunk<
+  Booking,
+  { bookingId: string; razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; },
+  { rejectValue: string }
+>(
+  "userBookings/verifyFinalPayment",
+  async (paymentData, { rejectWithValue }) => {
+    try {
+      const { bookingId, ...verificationDetails } = paymentData;
+      const response = await apiService.post<{ data: Booking }>(`/api/tourguide/${bookingId}/verify-final-payment`, verificationDetails);
+      return response.data; // Returns the updated booking object on success
+    } catch (error: any) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  }
+);
+
+
+export const fetchTourGuideBookingById = createAsyncThunk<Booking, string, { rejectValue: string }>(
+  "userBookings/fetchById",
+  async (bookingId, { rejectWithValue }) => {
+    try {
+      const response = await apiService.get<{ data: Booking }>(`/api/tourguide/${bookingId}`);
+      return response.data;
+    } catch (error: any) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  }
+);

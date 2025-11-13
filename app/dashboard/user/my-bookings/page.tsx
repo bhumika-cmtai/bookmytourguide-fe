@@ -65,7 +65,7 @@ function MyBookingCard({
           </AlertTitle>
           <AlertDescription className="text-amber-700">
             Your remaining payment of{" "}
-            <strong>₹{booking.remainingAmount?.toLocaleString()}</strong> is
+            <strong>₹{(booking.remainingAmount ?? 0).toLocaleString()}</strong> is
             due. Please complete the payment to start your tour.
           </AlertDescription>
         </Alert>
