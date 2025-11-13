@@ -12,7 +12,7 @@ import {
   Globe,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import Link from "next/link";
+import Link from "next/link"; // Link component ko import karein
 
 export function Footer() {
   const { t } = useLanguage();
@@ -27,6 +27,7 @@ export function Footer() {
     "cultural_walks",
     "food_tours",
   ];
+
   const destinationKeys = [
     "india_tours",
     "thailand_tours",
@@ -37,15 +38,16 @@ export function Footer() {
     "malaysia_tours",
     "cambodia_tours",
   ];
-  const supportKeys = [
-    "help_center",
-    "safety_guidelines",
-    "booking_policy",
-    "cancellation_policy",
-    "payment_security",
-    "travel_insurance",
-    "guide_verification",
-    "customer_support",
+
+  // Data structure ko theek kiya gaya hai taaki har link ka URL ho
+  const supportLinks = [
+    { key: "help_center", href: "/contact" },
+    { key: "safety_guidelines", href: "/safety-guidelines" },
+    { key: "privacy_policy", href: "/privacy-policy" },
+    { key: "refund_and_cancellation", href: "/refund-and-cancellation" },
+    { key: "terms_and_conditions", href: "/terms-and-conditions" },
+    { key: "guide_verification", href: "/guides" },
+    { key: "customer_support", href: "/contact" },
   ];
 
   return (
@@ -92,12 +94,12 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               {tourTypeKeys.map((key) => (
                 <li key={key}>
-                  <a
+                  <Link
                     href="#"
                     className="opacity-80 hover:opacity-100 hover:text-secondary transition-colors"
                   >
                     {t(key)}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -111,31 +113,31 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               {destinationKeys.map((key) => (
                 <li key={key}>
-                  <a
+                  <Link
                     href="#"
                     className="opacity-80 hover:opacity-100 hover:text-secondary transition-colors"
                   >
                     {t(key)}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Support */}
+          {/* Support - YAHAN PAR BADLAAV KIYA GAYA HAI */}
           <div className="animate-fade-in-up animate-delay-600">
             <h4 className="text-lg font-semibold mb-6">
               {t("footer_support")}
             </h4>
             <ul className="space-y-2 text-sm">
-              {supportKeys.map((key) => (
-                <li key={key}>
-                  <a
-                    href="#"
+              {supportLinks.map((link) => (
+                <li key={link.key}>
+                  <Link
+                    href={link.href}
                     className="opacity-80 hover:opacity-100 hover:text-secondary transition-colors"
                   >
-                    {t(key)}
-                  </a>
+                    {t(link.key)}
+                  </Link>
                 </li>
               ))}
             </ul>
