@@ -10,17 +10,19 @@ import {
 } from "@/lib/motion-variants";
 import { MapPin, Star, Camera, Crown } from "lucide-react";
 import Image from "next/image";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function GoldenTriangleSection() {
+  const { t } = useLanguage();
+
   const cities = [
-    { name: "Delhi", icon: "🏛️", color: "from-red-500 to-orange-500" },
-    { name: "Agra", icon: "🕌", color: "from-blue-500 to-cyan-500" },
-    { name: "Jaipur", icon: "👑", color: "from-pink-500 to-purple-500" },
+    { name: "Delhi", icon: "🏛️" },
+    { name: "Agra", icon: "🕌" },
+    { name: "Jaipur", icon: "👑" },
   ];
 
   return (
     <section className="py-16 md:py-24 bg-background relative overflow-hidden">
-      {/* Background elements */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         whileInView={{ opacity: 0.05, scale: 1 }}
@@ -41,7 +43,6 @@ export default function GoldenTriangleSection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={staggerContainer}
         >
-          {/* Header */}
           <motion.div
             variants={fadeInUp}
             custom={0}
@@ -55,43 +56,30 @@ export default function GoldenTriangleSection() {
             >
               <Crown className="w-4 h-4 text-orange-500" />
               <span className="text-sm font-medium text-orange-500">
-                Special Focus
+                {t("gt_header")}
               </span>
             </motion.div>
 
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 text-balance leading-tight">
-              Our Special Focus — The{" "}
-              <span className="bg-gradient-to-r from-orange-500 to-pink-600 bg-clip-text text-transparent">
-                Golden Triangle
-              </span>
+              {t("gt_title")}
             </h2>
             <div className="h-1 w-20 bg-gradient-to-r from-orange-500 to-pink-600 rounded-full mx-auto" />
           </motion.div>
 
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-stretch">
-            {/* Content Column */}
             <motion.div
               variants={slideInLeft}
               className="flex flex-col space-y-8"
             >
               <div className="space-y-6 flex-grow">
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  The Golden Triangle — Delhi, Agra, and Jaipur — represents the
-                  heart of India's tourism experience, covering some of the
-                  nation's most iconic World Heritage Sites such as the Taj
-                  Mahal, Qutub Minar, Amber Fort, and Red Fort in Agra.
+                  {t("gt_p1")}
                 </p>
-
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  At IndiaTourManager.com, we specialize in offering the best
-                  professional guides for this region. Whether you're exploring
-                  Delhi's Mughal architecture, Agra's timeless love story, or
-                  Jaipur's royal heritage — our guides ensure you experience
-                  these wonders with comfort, clarity, and cultural depth.
+                  {t("gt_p2")}
                 </p>
               </div>
 
-              {/* Stats Cards */}
               <div className="grid grid-cols-2 gap-4">
                 <motion.div
                   variants={scaleIn}
@@ -105,7 +93,7 @@ export default function GoldenTriangleSection() {
                     3
                   </div>
                   <div className="text-sm text-muted-foreground font-medium">
-                    Iconic Cities
+                    {t("gt_stat_cities")}
                   </div>
                 </motion.div>
 
@@ -121,18 +109,17 @@ export default function GoldenTriangleSection() {
                     ∞
                   </div>
                   <div className="text-sm text-muted-foreground font-medium">
-                    Experiences
+                    {t("gt_stat_exp")}
                   </div>
                 </motion.div>
               </div>
 
-              {/* Cities showcase */}
               <motion.div
                 variants={fadeInUp}
                 custom={2}
                 className="grid grid-cols-3 gap-3"
               >
-                {cities.map((city, index) => (
+                {cities.map((city) => (
                   <motion.div
                     key={city.name}
                     whileHover={{
@@ -150,12 +137,10 @@ export default function GoldenTriangleSection() {
               </motion.div>
             </motion.div>
 
-            {/* Visual Column */}
             <motion.div
               variants={slideInRight}
               className="relative flex flex-col"
             >
-              {/* Main visual container */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
@@ -170,36 +155,33 @@ export default function GoldenTriangleSection() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-                {/* Overlay content */}
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="bg-background/90 backdrop-blur-sm rounded-xl p-4 border">
                     <div className="flex items-center gap-3 mb-3">
                       <MapPin className="w-5 h-5 text-orange-500" />
                       <span className="font-bold text-foreground">
-                        The Golden Triangle
+                        {t("gt_overlay_title")}
                       </span>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span>Heritage Sites</span>
+                        <span>{t("gt_overlay_feat1")}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Camera className="w-4 h-4 text-blue-500" />
-                        <span>Photo Spots</span>
+                        <span>{t("gt_overlay_feat2")}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </motion.div>
 
-              {/* Decorative elements */}
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
                 className="absolute -top-4 -right-4 w-8 h-8 border-2 border-orange-500/30 rounded-full"
               />
-
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{

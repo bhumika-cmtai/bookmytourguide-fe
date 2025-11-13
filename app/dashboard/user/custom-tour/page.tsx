@@ -1,414 +1,524 @@
-// app/custom-tour/page.tsx
-"use client"
+"use client";
 
-import { useState } from 'react';
-import { DateRange } from 'react-day-picker';
-import { formLocations, formLanguages } from '@/lib/data';
-import HeroSection from '@/components/all/CommonHeroSection';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarIcon, Check, ChevronsUpDown, Send, PartyPopper, X } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { useState, useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import {
+  fetchCustomTourFormData,
+  submitCustomTourRequest,
+} from "@/lib/redux/thunks/customTour/customTourThunks";
+import { resetFormStatus } from "@/lib/redux/customTourSlice";
+import { toast } from "sonner";
+import { DateRange } from "react-day-picker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Calendar as CalendarIcon,
+  Check,
+  ChevronsUpDown,
+  Send,
+  PartyPopper,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function CustomTourPage() {
-    // States for form fields
-    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
-    const [selectedLanguage, setSelectedLanguage] = useState('');
-    const [dateRange, setDateRange] = useState<DateRange | undefined>();
-    const [numTravelers, setNumTravelers] = useState('');
-    const [fullName, setFullName] = useState('');
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [specialRequests, setSpecialRequests] = useState('');
+  const dispatch = useAppDispatch();
+  const {
+    locations,
+    languages,
+    formLoading,
+    formError,
+    submitLoading,
+    submitSuccess,
+    submitError,
+  } = useAppSelector((state) => state.customTour);
 
-    // States to control popovers explicitly
-    const [isLocationsOpen, setLocationsOpen] = useState(false);
-    const [isCalendarOpen, setCalendarOpen] = useState(false);
-    const [isFortnightMode, setFortnightMode] = useState(false);
-    
-    // State for form submission status
-    const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'submitted'>('idle');
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [numTravelers, setNumTravelers] = useState(1);
+  const [preferredMonuments, setPreferredMonuments] = useState("");
+  const [needsLunch, setNeedsLunch] = useState(false);
+  const [needsDinner, setNeedsDinner] = useState(false);
+  const [needsStay, setNeedsStay] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [isLocationsOpen, setLocationsOpen] = useState(false);
+  const [isDateOpen, setDateOpen] = useState(false);
 
-    // Calculate tour duration in days
-    const getTourDuration = () => {
-        if (dateRange?.from && dateRange?.to) {
-            return differenceInDays(dateRange.to, dateRange.from) + 1;
-        }
-        return 0;
-    };
+  useEffect(() => {
+    dispatch(fetchCustomTourFormData());
+  }, [dispatch]);
 
-    const handleDateSelect = (selectedRange: DateRange | undefined) => {
-        if (isFortnightMode && selectedRange?.from) {
-            const start = selectedRange.from;
-            const end = new Date(start);
-            end.setDate(start.getDate() + 13);
-            setDateRange({ from: start, to: end });
-            setCalendarOpen(false);
-            setFortnightMode(false);
-        } else {
-            setDateRange(selectedRange);
-            if (selectedRange?.from && selectedRange?.to) {
-                setCalendarOpen(false);
-            }
-        }
-    };
+  useEffect(() => {
+    if (submitError) toast.error(submitError);
+  }, [submitError]);
 
-    const handleSelectLocation = (locationLabel: string) => {
-        const isSelected = selectedLocations.includes(locationLabel);
-        if (isSelected) {
-            setSelectedLocations(prev => prev.filter(l => l !== locationLabel));
-        } else {
-            setSelectedLocations(prev => [...prev, locationLabel]);
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setFormStatus('submitting');
-        
-        const formData = {
-            selectedLocations,
-            selectedLanguage,
-            dateRange: {
-                from: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : null,
-                to: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : null,
-            },
-            tourDuration: getTourDuration(),
-            numTravelers,
-            fullName,
-            email,
-            phone,
-            specialRequests,
-            submittedAt: new Date().toISOString(),
-        };
-
-        console.log("=".repeat(50));
-        console.log("🎯 CUSTOM TOUR REQUEST SUBMITTED");
-        console.log("=".repeat(50));
-        console.log("📍 Destinations:", formData.selectedLocations.join(", ") || "None selected");
-        console.log("🗣️  Preferred Language:", formData.selectedLanguage || "Not specified");
-        console.log("📅 Tour Start Date:", formData.dateRange.from || "Not set");
-        console.log("📅 Tour End Date:", formData.dateRange.to || "Not set");
-        console.log("⏰ Tour Duration:", formData.tourDuration ? `${formData.tourDuration} days` : "Not calculated");
-        console.log("👥 Number of Travelers:", formData.numTravelers || "Not specified");
-        console.log("👤 Full Name:", formData.fullName);
-        console.log("📧 Email:", formData.email);
-        console.log("📱 Phone:", formData.phone || "Not provided");
-        console.log("📝 Special Requests:", formData.specialRequests || "None");
-        console.log("🕐 Submitted At:", formData.submittedAt);
-        console.log("=".repeat(50));
-        console.log("\n📦 Complete Form Data Object:");
-        console.log(JSON.stringify(formData, null, 2));
-        console.log("=".repeat(50));
-        
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        setFormStatus('submitted');
-    };
-
-    if (formStatus === 'submitted') {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center text-center p-4">
-                <div className="animate-fade-in-up">
-                    <PartyPopper className="w-24 h-24 mx-auto text-primary mb-6" />
-                    <h1 className="text-4xl font-extrabold text-foreground mb-4">Request Sent!</h1>
-                    <p className="text-xl text-muted-foreground max-w-md mx-auto">
-                        Thank you for your submission. You will be contacted shortly.
-                    </p>
-                    <Button 
-                        onClick={() => {
-                            setFormStatus('idle');
-                            setSelectedLocations([]);
-                            setSelectedLanguage('');
-                            setDateRange(undefined);
-                            setNumTravelers('');
-                            setFullName('');
-                            setEmail('');
-                            setPhone('');
-                            setSpecialRequests('');
-                        }}
-                        className="mt-6"
-                        variant="outline"
-                    >
-                        Submit Another Request
-                    </Button>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="min-h-screen bg-background">
-            <main className="pt-10">
-                <section className="">
-                    <div className="container max-w-4xl mx-auto px-4">
-                        <Card className="animate-fade-in-up animate-delay-200">
-                            <CardHeader>
-                                <CardTitle className="text-3xl">Design Your Custom Tour</CardTitle>
-                                <CardDescription>Fill out the form below and we'll create a custom itinerary and quote for you.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <form onSubmit={handleSubmit} className="space-y-8">
-                                    {/* Destination Selector */}
-                                    <div>
-                                        <Label htmlFor="locations" className="font-bold text-lg">Destinations</Label>
-                                        <p className="text-sm text-muted-foreground mb-2">Select one or more places you want to visit.</p>
-                                        <Popover open={isLocationsOpen} onOpenChange={setLocationsOpen} modal={true}>
-                                            <PopoverTrigger asChild>
-                                                <button
-                                                    type="button"
-                                                    className="flex items-center justify-between w-full p-2 border rounded-md min-h-12 cursor-pointer hover:bg-accent/50 transition-colors bg-background"
-                                                    onClick={() => setLocationsOpen(!isLocationsOpen)}
-                                                >
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {selectedLocations.length > 0 ? (
-                                                            selectedLocations.map(loc => (
-                                                                <Badge key={loc} variant="secondary" className="text-base">
-                                                                    {loc}
-                                                                    <button 
-                                                                        type="button" 
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleSelectLocation(loc);
-                                                                        }} 
-                                                                        className="ml-1.5 rounded-full outline-none hover:bg-destructive/80"
-                                                                    >
-                                                                        <X className="h-3 w-3" />
-                                                                    </button>
-                                                                </Badge>
-                                                            ))
-                                                        ) : (
-                                                            <span className="text-muted-foreground">Select locations...</span>
-                                                        )}
-                                                    </div>
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </button>
-                                            </PopoverTrigger>
-                                            <PopoverContent 
-                                                className="w-[var(--radix-popover-trigger-width)] p-0 bg-white dark:bg-gray-950 border shadow-lg" 
-                                                align="start" 
-                                                sideOffset={4}
-                                                style={{ zIndex: 50 }}
-                                            >
-                                                <Command className="bg-white dark:bg-gray-950">
-                                                    <CommandInput placeholder="Search locations..." className="h-9" />
-                                                    <CommandList className="max-h-[300px]">
-                                                        <CommandEmpty>No location found.</CommandEmpty>
-                                                        <CommandGroup>
-                                                            {formLocations.map((location) => (
-                                                                <CommandItem 
-                                                                    key={location.value} 
-                                                                    value={location.label} 
-                                                                    onSelect={() => handleSelectLocation(location.label)}
-                                                                    className="cursor-pointer"
-                                                                >
-                                                                    <Check className={`mr-2 h-4 w-4 ${selectedLocations.includes(location.label) ? "opacity-100" : "opacity-0"}`} />
-                                                                    {location.label}
-                                                                </CommandItem>
-                                                            ))}
-                                                        </CommandGroup>
-                                                    </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
-                                    </div>
-                                    
-                                    {/* Tour Preferences */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <Label htmlFor="language" className="font-bold text-lg">Preferred Guide Language</Label>
-                                            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                                                <SelectTrigger className="h-12 bg-white dark:bg-gray-950">
-                                                    <SelectValue placeholder="Select a language" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-white dark:bg-gray-950 border shadow-lg" style={{ zIndex: 50 }}>
-                                                    {formLanguages.map(lang => (
-                                                        <SelectItem key={lang.value} value={lang.value}>
-                                                            {lang.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="travelers" className="font-bold text-lg">Number of Travelers</Label>
-                                            <Input 
-                                                id="travelers" 
-                                                type="number" 
-                                                placeholder="e.g., 2" 
-                                                value={numTravelers} 
-                                                onChange={e => setNumTravelers(e.target.value)} 
-                                                required 
-                                                min="1"
-                                                className="h-12"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Duration Selector */}
-                                    <div>
-                                        <Label className="font-bold text-lg">Tour Duration</Label>
-                                        <p className="text-sm text-muted-foreground mb-2">
-                                            {getTourDuration() > 0 && (
-                                                <span className="font-semibold text-primary">Selected: {getTourDuration()} days</span>
-                                            )}
-                                        </p>
-                                        <div className="flex flex-col sm:flex-row gap-2">
-                                            <Popover open={isCalendarOpen} onOpenChange={setCalendarOpen} modal={true}>
-                                                <PopoverTrigger asChild>
-                                                    <Button 
-                                                        id="date" 
-                                                        variant="outline" 
-                                                        className="flex-grow justify-start text-left font-normal h-12 hover:bg-accent/50"
-                                                        type="button"
-                                                    >
-                                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                                        {dateRange?.from ? (
-                                                            dateRange.to ? (
-                                                                <>{format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}</>
-                                                            ) : (
-                                                                format(dateRange.from, "LLL dd, y")
-                                                            )
-                                                        ) : (
-                                                            <span>Pick a date range</span>
-                                                        )}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent 
-                                                    className="w-auto p-0 bg-white dark:bg-gray-950 border shadow-lg" 
-                                                    align="start"
-                                                    sideOffset={4}
-                                                    style={{ zIndex: 50 }}
-                                                >
-                                                    <div className="p-3 border-b bg-white dark:bg-gray-950">
-                                                        <p className="text-sm font-medium">
-                                                            {isFortnightMode 
-                                                                ? "Select start date for 14-day tour" 
-                                                                : "Select start and end dates"}
-                                                        </p>
-                                                    </div>
-                                                    <div className="bg-white dark:bg-gray-950">
-                                                        {isFortnightMode ? (
-                                                            <Calendar 
-                                                                mode="single"
-                                                                selected={dateRange?.from}
-                                                                onSelect={(date) => {
-                                                                    if (date) {
-                                                                        handleDateSelect({ from: date, to: undefined });
-                                                                    }
-                                                                }}
-                                                                numberOfMonths={2}
-                                                                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                                            />
-                                                        ) : (
-                                                            <Calendar 
-                                                                mode="range"
-                                                                selected={dateRange}
-                                                                onSelect={handleDateSelect}
-                                                                numberOfMonths={2}
-                                                                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                </PopoverContent>
-                                            </Popover>
-                                            <Button 
-                                                type="button" 
-                                                variant="secondary" 
-                                                onClick={() => {
-                                                    setFortnightMode(true);
-                                                    setCalendarOpen(true);
-                                                }} 
-                                                className="h-12 whitespace-nowrap"
-                                            >
-                                                Set 14-Day Tour
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Personal Details */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <Label htmlFor="fullname" className="font-bold">Full Name</Label>
-                                            <Input 
-                                                id="fullname" 
-                                                placeholder="John Doe" 
-                                                value={fullName} 
-                                                onChange={e => setFullName(e.target.value)} 
-                                                required 
-                                                className="h-12"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="email" className="font-bold">Email Address</Label>
-                                            <Input 
-                                                id="email" 
-                                                type="email" 
-                                                placeholder="you@example.com" 
-                                                value={email} 
-                                                onChange={e => setEmail(e.target.value)} 
-                                                required 
-                                                className="h-12"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="phone" className="font-bold">Phone Number (Optional)</Label>
-                                        <Input 
-                                            id="phone" 
-                                            type="tel" 
-                                            placeholder="+91 9876543210" 
-                                            value={phone} 
-                                            onChange={e => setPhone(e.target.value)} 
-                                            className="h-12"
-                                        />
-                                    </div>
-                                    
-                                    {/* Special Requests */}
-                                    <div>
-                                        <Label htmlFor="requests" className="font-bold text-lg">Special Requests</Label>
-                                        <p className="text-sm text-muted-foreground mb-2">
-                                            Share any special requirements or preferences
-                                        </p>
-                                        <Textarea 
-                                            id="requests" 
-                                            placeholder="e.g., accessibility needs, dietary restrictions, specific hotels, activities you'd like to include..." 
-                                            value={specialRequests} 
-                                            onChange={e => setSpecialRequests(e.target.value)} 
-                                            rows={5}
-                                            className="resize-none"
-                                        />
-                                    </div>
-                                    
-                                    <Button 
-                                        type="submit" 
-                                        size="lg" 
-                                        className="w-full text-lg h-14 red-gradient text-white font-bold hover:opacity-90 transition-opacity" 
-                                        disabled={formStatus === 'submitting'}
-                                    >
-                                        {formStatus === 'submitting' ? (
-                                            <>Submitting...</>
-                                        ) : (
-                                            <>
-                                                Send My Request <Send className="ml-2 w-5 h-5" />
-                                            </>
-                                        )}
-                                    </Button>
-                                </form>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </section>
-            </main>
-        </div>
+  const handleSelectLocation = (locationId: string) => {
+    setSelectedLocations((prev) =>
+      prev.includes(locationId)
+        ? prev.filter((id) => id !== locationId)
+        : [...prev, locationId]
     );
+  };
+
+  const resetForm = () => {
+    setFullName("");
+    setEmail("");
+    setPhone("");
+    setSelectedLocations([]);
+    setSelectedLanguage("");
+    setDateRange(undefined);
+    setNumTravelers(1);
+    setPreferredMonuments("");
+    setNeedsLunch(false);
+    setNeedsDinner(false);
+    setNeedsStay(false);
+    setAcknowledged(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName || !email) {
+      toast.error("Please fill in your Full Name and Email.");
+      return;
+    }
+    if (!acknowledged) {
+      toast.error("Please acknowledge the terms before submitting.");
+      return;
+    }
+    dispatch(
+      submitCustomTourRequest({
+        fullName,
+        email,
+        phone,
+        selectedLocations,
+        selectedLanguage,
+        dateRange: { from: dateRange?.from || null, to: dateRange?.to || null },
+        numTravelers,
+        preferredMonuments,
+        needsLunch,
+        needsDinner,
+        needsStay,
+        acknowledged,
+      })
+    );
+  };
+
+  if (formLoading) {
+    return (
+      <div className="container max-w-4xl mx-auto px-4 py-12">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-3/4 mx-auto" />
+          </CardHeader>
+          <CardContent className="space-y-8 pt-8">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (formError) {
+    return (
+      <div className="container max-w-4xl mx-auto px-4 py-12 text-center">
+        <AlertCircle className="w-16 h-16 mx-auto text-destructive mb-4" />
+        <h2 className="text-2xl font-bold">Failed to load form data</h2>
+        <p className="text-muted-foreground">{formError}</p>
+      </div>
+    );
+  }
+
+  if (submitSuccess) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-center p-4">
+        <div>
+          <PartyPopper className="w-24 h-24 mx-auto text-primary mb-6" />
+          <h1 className="text-4xl font-extrabold mb-4">Request Sent!</h1>
+          <p className="text-xl text-muted-foreground max-w-md mx-auto">
+            Thank you. We will get back to you shortly.
+          </p>
+          <Button
+            onClick={() => {
+              resetForm();
+              dispatch(resetFormStatus());
+            }}
+            className="mt-8"
+            size="lg"
+          >
+            Create Another Request
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-muted/50">
+      <main className="py-12 md:py-16">
+        <div className="container max-w-4xl mx-auto px-4">
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-3xl md:text-4xl font-extrabold">
+                Create Your Custom Tour
+              </CardTitle>
+              <CardDescription className="text-lg text-muted-foreground mt-2">
+                Fill the details for a personalized itinerary.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-8">
+              <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Full Name & Email */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="fullname" className="text-lg font-semibold">
+                      Full Name
+                    </Label>
+                    <Input
+                      id="fullname"
+                      placeholder="John Doe"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                      className="h-12 mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email" className="text-lg font-semibold">
+                      Email Address
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-12 mt-2"
+                    />
+                  </div>
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <Label htmlFor="phone" className="text-lg font-semibold">
+                    Phone Number (Optional)
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+91 9876543210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="h-12 mt-2"
+                  />
+                </div>
+
+                {/* Select Places */}
+                <div className="space-y-2">
+                  <Label className="text-lg font-semibold">Select Places</Label>
+                  <Popover
+                    open={isLocationsOpen}
+                    onOpenChange={setLocationsOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setLocationsOpen(!isLocationsOpen)}
+                        className="flex w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-3 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 min-h-[48px]"
+                      >
+                        <div className="flex flex-wrap gap-2 flex-1 text-left">
+                          {selectedLocations.length > 0 ? (
+                            locations
+                              .filter((loc) =>
+                                selectedLocations.includes(loc._id)
+                              )
+                              .map((loc) => (
+                                <Badge
+                                  key={loc._id}
+                                  variant="secondary"
+                                  className="text-xs"
+                                >
+                                  {loc.placeName}
+                                </Badge>
+                              ))
+                          ) : (
+                            <span className="text-muted-foreground">
+                              Select locations...
+                            </span>
+                          )}
+                        </div>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-[--radix-popover-trigger-width] p-0"
+                      align="start"
+                    >
+                      <Command>
+                        <CommandInput
+                          placeholder="Search places..."
+                          className="h-9"
+                        />
+                        <CommandList>
+                          <CommandEmpty>No location found.</CommandEmpty>
+                          <CommandGroup>
+                            {locations.map((location) => (
+                              <CommandItem
+                                key={location._id}
+                                value={location.placeName}
+                                onSelect={() => {
+                                  handleSelectLocation(location._id);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedLocations.includes(location._id)
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {location.placeName}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Language & Travelers */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="language" className="text-lg font-semibold">
+                      Preferred Language
+                    </Label>
+                    <Select
+                      value={selectedLanguage}
+                      onValueChange={setSelectedLanguage}
+                    >
+                      <SelectTrigger className="h-12 mt-2">
+                        <SelectValue placeholder="Select a language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages.map((lang) => (
+                          <SelectItem key={lang._id} value={lang._id}>
+                            {lang.languageName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="travelers"
+                      className="text-lg font-semibold"
+                    >
+                      Number of Travelers
+                    </Label>
+                    <Input
+                      id="travelers"
+                      type="number"
+                      value={numTravelers}
+                      onChange={(e) =>
+                        setNumTravelers(parseInt(e.target.value) || 1)
+                      }
+                      required
+                      min="1"
+                      className="h-12 mt-2"
+                    />
+                  </div>
+                </div>
+
+                {/* Travel Dates */}
+                <div className="space-y-2">
+                  <Label className="text-lg font-semibold">
+                    Travel Dates (Optional)
+                  </Label>
+                  <Popover open={isDateOpen} onOpenChange={setDateOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setDateOpen(!isDateOpen)}
+                        className={cn(
+                          "flex w-full items-center justify-start rounded-md border border-input bg-transparent px-3 py-3 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 h-12",
+                          !dateRange && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange?.from ? (
+                          dateRange.to ? (
+                            <>
+                              {format(dateRange.from, "LLL dd, y")} -{" "}
+                              {format(dateRange.to, "LLL dd, y")}
+                            </>
+                          ) : (
+                            format(dateRange.from, "LLL dd, y")
+                          )
+                        ) : (
+                          <span>Pick a date range</span>
+                        )}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="range"
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        numberOfMonths={2}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Preferred Monuments */}
+                <div>
+                  <Label htmlFor="monuments" className="text-lg font-semibold">
+                    Preferred Monuments (Optional)
+                  </Label>
+                  <Textarea
+                    id="monuments"
+                    placeholder="e.g., Taj Mahal, Hawa Mahal..."
+                    value={preferredMonuments}
+                    onChange={(e) => setPreferredMonuments(e.target.value)}
+                    rows={3}
+                    className="mt-2"
+                  />
+                </div>
+
+                {/* Additional Services */}
+                <div>
+                  <Label className="text-lg font-semibold">
+                    Additional Services
+                  </Label>
+                  <div className="space-y-3 mt-2 p-4 border rounded-md bg-card">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="stay"
+                        checked={needsStay}
+                        onCheckedChange={(checked) =>
+                          setNeedsStay(Boolean(checked))
+                        }
+                      />
+                      <Label htmlFor="stay" className="cursor-pointer">
+                        Include Stay / Accommodation
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="lunch"
+                        checked={needsLunch}
+                        onCheckedChange={(checked) =>
+                          setNeedsLunch(Boolean(checked))
+                        }
+                      />
+                      <Label htmlFor="lunch" className="cursor-pointer">
+                        Include Lunch
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="dinner"
+                        checked={needsDinner}
+                        onCheckedChange={(checked) =>
+                          setNeedsDinner(Boolean(checked))
+                        }
+                      />
+                      <Label htmlFor="dinner" className="cursor-pointer">
+                        Include Dinner
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Acknowledgement */}
+                <div className="flex items-start space-x-2 p-4 border rounded-md bg-muted/50">
+                  <Checkbox
+                    id="acknowledge"
+                    checked={acknowledged}
+                    onCheckedChange={(checked) =>
+                      setAcknowledged(Boolean(checked))
+                    }
+                    required
+                    className="mt-0.5"
+                  />
+                  <Label
+                    htmlFor="acknowledge"
+                    className="text-sm font-medium leading-relaxed cursor-pointer"
+                  >
+                    I acknowledge this is an inquiry, not a confirmed booking.
+                  </Label>
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full text-lg h-14 font-bold"
+                  disabled={submitLoading}
+                >
+                  {submitLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-5 w-5" />
+                      Submit Inquiry
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
 }

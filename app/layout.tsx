@@ -7,15 +7,13 @@ import { Suspense } from "react";
 import "./globals.css";
 import { ReduxProvider } from "@/lib/provider";
 import ToastProvider from "@/lib/ToastProvider";
-// import { AuthProvider } from "@/components/auth/AuthProvider";
-
+import  {LanguageProvider}  from "@/contexts/LanguageContext"; 
 export const metadata: Metadata = {
   title: "BookMyTourGuide",
   description:
     "Connect with certified local guides for authentic eco tours, heritage walks, cooking classes, and cultural experiences worldwide.",
   generator: "v0.app",
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,14 +22,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <ReduxProvider>
-          {/* <AuthProvider> */}
+        {/* LanguageProvider se sab kuch wrap karein */}
+        <LanguageProvider>
+          <ReduxProvider>
             <ToastProvider>
               <Suspense fallback={null}>{children}</Suspense>
               <Analytics />
             </ToastProvider>
-          {/* </AuthProvider> */}
-        </ReduxProvider>
+          </ReduxProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

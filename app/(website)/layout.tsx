@@ -4,10 +4,10 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
-import { Header } from "@/components/layout/website/Header";
-import { Footer } from "@/components/layout/website/Footer";
+import { Header } from "@/components/layout/website/header";
+import { Footer } from "@/components/layout/website/footer";
 import Script from 'next/script';
-import { CartProvider } from "@/contexts/CardContext";
+// import { CartProvider } from "@/contexts/CardContext";
 
 export const metadata: Metadata = {
   title: "BookMyTourGuide",
@@ -22,13 +22,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-        <CartProvider>
+        <>
           <Header />
           <Suspense fallback={null}>{children}
           </Suspense>
           <Footer />
           <Analytics />
           <Script src="https://checkout.razorpay.com/v1/checkout.js" />
-        </CartProvider>
+        </>
   );
 }

@@ -1,42 +1,53 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Star, Shield, Globe, Award, Users } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, Star, Shield, Globe, Award, Users } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function GuideRegistration() {
+  const { t } = useLanguage();
+
   const benefits = [
     {
       icon: Star,
-      title: "Earn Premium Income",
-      description: "Top guides earn $200-500 per day with our platform",
+      titleKey: "benefit_title_1",
+      descriptionKey: "benefit_desc_1",
     },
     {
       icon: Shield,
-      title: "Verified & Trusted",
-      description: "Complete verification process builds client trust",
+      titleKey: "benefit_title_2",
+      descriptionKey: "benefit_desc_2",
     },
     {
       icon: Globe,
-      title: "Global Reach",
-      description: "Connect with travelers from around the world",
+      titleKey: "benefit_title_3",
+      descriptionKey: "benefit_desc_3",
     },
     {
       icon: Award,
-      title: "Professional Growth",
-      description: "Access training and certification programs",
+      titleKey: "benefit_title_4",
+      descriptionKey: "benefit_desc_4",
     },
-  ]
+  ];
 
-  const requirements = [
-    "Valid government ID and local residence proof",
-    "Minimum 2 years of guiding experience",
-    "Fluency in English + local language",
-    "First aid certification (we can help arrange)",
-    "Clean background check",
-    "Professional references from previous clients",
-  ]
+  const requirementKeys = [
+    "req_1",
+    "req_2",
+    "req_3",
+    "req_4",
+    "req_5",
+    "req_6",
+  ];
+
+  const appStepKeys = [
+    "app_step_1",
+    "app_step_2",
+    "app_step_3",
+    "app_step_4",
+    "app_step_5",
+  ];
 
   return (
     <section id="guides" className="py-20 bg-background">
@@ -44,33 +55,46 @@ export function GuideRegistration() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
           <div className="animate-slide-in-left">
-            <Badge className="mb-4 bg-secondary/10 text-secondary border-secondary/20">Join Our Network</Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">Become a Certified Guide</h2>
+            <Badge className="mb-4 bg-secondary/10 text-secondary border-secondary/20">
+              {t("join_our_network")}
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
+              {t("become_certified_guide")}
+            </h2>
             <p className="text-xl text-secondary mb-8 text-balance">
-              Join our exclusive network of professional guides and share your passion for your local culture while
-              earning a sustainable income.
+              {t("guide_reg_desc")}
             </p>
 
             {/* Benefits */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-              {benefits.map((benefit, index) => {
-                const Icon = benefit.icon
+              {benefits.map((benefit) => {
+                const Icon = benefit.icon;
                 return (
-                  <div key={benefit.title} className="flex items-start space-x-3">
+                  <div
+                    key={benefit.titleKey}
+                    className="flex items-start space-x-3"
+                  >
                     <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Icon className="w-5 h-5 text-secondary" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-primary mb-1">{benefit.title}</h4>
-                      <p className="text-sm text-secondary">{benefit.description}</p>
+                      <h4 className="font-semibold text-primary mb-1">
+                        {t(benefit.titleKey)}
+                      </h4>
+                      <p className="text-sm text-secondary">
+                        {t(benefit.descriptionKey)}
+                      </p>
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
 
-            <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-              Start Application
+            <Button
+              size="lg"
+              className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+            >
+              {t("start_application")}
             </Button>
           </div>
 
@@ -80,27 +104,27 @@ export function GuideRegistration() {
               <CardHeader className="bg-secondary text-secondary-foreground rounded-t-lg">
                 <CardTitle className="flex items-center text-xl">
                   <Users className="w-6 h-6 mr-2" />
-                  Guide Requirements
+                  {t("guide_requirements_title")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  {requirements.map((requirement, index) => (
-                    <div key={index} className="flex items-start space-x-3">
+                  {requirementKeys.map((key) => (
+                    <div key={key} className="flex items-start space-x-3">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-foreground">{requirement}</span>
+                      <span className="text-foreground">{t(key)}</span>
                     </div>
                   ))}
                 </div>
 
                 <div className="mt-6 p-4 bg-card rounded-lg">
-                  <h4 className="font-semibold text-primary mb-2">Application Process</h4>
+                  <h4 className="font-semibold text-primary mb-2">
+                    {t("app_process_title")}
+                  </h4>
                   <div className="text-sm text-secondary space-y-1">
-                    <p>1. Submit online application (5 minutes)</p>
-                    <p>2. Document verification (2-3 days)</p>
-                    <p>3. Video interview with our team</p>
-                    <p>4. Background check completion</p>
-                    <p>5. Welcome to WanderGuide family!</p>
+                    {appStepKeys.map((key) => (
+                      <p key={key}>{t(key)}</p>
+                    ))}
                   </div>
                 </div>
               </CardContent>
@@ -109,5 +133,5 @@ export function GuideRegistration() {
         </div>
       </div>
     </section>
-  )
+  );
 }
