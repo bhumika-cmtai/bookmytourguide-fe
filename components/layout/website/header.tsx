@@ -17,13 +17,11 @@ import {
   Users,
   HelpCircle,
   Mail,
-  ShoppingCart,
   Settings,
   Users2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Cart } from "@/components/cart/Cart";
 import { useAuth } from "@/lib/hooks/useAuth";
 import {
   useLanguage,
@@ -73,6 +71,7 @@ export function Header() {
   }, []);
 
   useEffect(() => {
+    // Close mobile menu on route change
     setIsMenuOpen(false);
   }, [pathname]);
 
@@ -149,7 +148,7 @@ export function Header() {
           </nav>
 
           <div className="hidden lg:flex items-center space-x-4">
-            <Cart />
+            {/* --- CART REMOVED FROM HERE --- */}
             <div className="relative">
               <select
                 value={language}
@@ -186,6 +185,7 @@ export function Header() {
                   className={`w-4 h-4 text-gray-500 transition-all duration-300 group-hover:text-gray-700 ${isProfileOpen ? "rotate-180" : ""}`}
                 />
               </button>
+
               {isProfileOpen && (
                 <div className="absolute right-0 mt-3 w-56 bg-white/98 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200">
                   {!isAuthenticated ? (
@@ -198,14 +198,24 @@ export function Header() {
                           {t("profile_signin_prompt")}
                         </p>
                       </div>
-                      <button onClick={handleLogin} className="w-full ...">
-                        <LogIn className="..." />
+                      <button
+                        onClick={handleLogin}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                      >
+                        <div className="w-8 h-8 bg-primary/15 rounded-lg flex items-center justify-center">
+                          <LogIn className="w-4 h-4 text-primary" />
+                        </div>
                         <span className="font-medium">
                           {t("profile_login")}
                         </span>
                       </button>
-                      <button onClick={handleRegister} className="w-full ...">
-                        <UserPlus className="..." />
+                      <button
+                        onClick={handleRegister}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                      >
+                        <div className="w-8 h-8 bg-primary/15 rounded-lg flex items-center justify-center">
+                          <UserPlus className="w-4 h-4 text-primary" />
+                        </div>
                         <span className="font-medium">
                           {t("profile_register")}
                         </span>
@@ -213,23 +223,47 @@ export function Header() {
                     </>
                   ) : (
                     <>
-                      {/* User Info */}
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+                            <User className="w-5 h-5 text-primary-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {user?.name}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {user?.email}
+                            </p>
+                            <p className="text-xs text-primary font-medium capitalize">
+                              {user?.role}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
                       <button
                         onClick={handleProfileClick}
-                        className="w-full ..."
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-all duration-200"
                       >
-                        <Settings className="..." />
+                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <Settings className="w-4 h-4 text-gray-600" />
+                        </div>
                         <span className="font-medium">
                           {t("profile_dashboard")}
                         </span>
                       </button>
+
                       <div className="mx-4 my-2 h-px bg-gray-200" />
+
                       <button
                         onClick={handleLogout}
                         disabled={loading}
-                        className="w-full ..."
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-all duration-200 disabled:opacity-50"
                       >
-                        <LogOut className="..." />
+                        <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                          <LogOut className="w-4 h-4 text-red-600" />
+                        </div>
                         <span className="font-medium">
                           {loading
                             ? t("profile_logging_out")
@@ -242,14 +276,119 @@ export function Header() {
               )}
             </div>
           </div>
+
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="lg:hidden ..."
+            className="lg:hidden p-2.5 rounded-xl hover:bg-gray-50 transition-colors border border-gray-200"
+            aria-label="Toggle menu"
           >
-            {isMenuOpen ? <X className="..." /> : <Menu className="..." />}
+            {isMenuOpen ? (
+              <X className="w-5 h-5 text-gray-700" />
+            ) : (
+              <Menu className="w-5 h-5 text-gray-700" />
+            )}
           </button>
         </div>
-        {isMenuOpen && <div className="lg:hidden ...">{/* Mobile Menu */}</div>}
+
+        {/* --- MOBILE MENU ADDED HERE --- */}
+        {isMenuOpen && (
+          <div className="lg:hidden py-4 border-t border-gray-200/50 bg-white/95 backdrop-blur-md animate-in fade-in-0 slide-in-from-top-2 duration-300">
+            <div className="flex flex-col space-y-4">
+              <nav className="flex flex-col space-y-1">
+                {navigationItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center space-x-3 px-4 py-2.5 rounded-lg font-medium text-sm ${
+                      isActive(item.href)
+                        ? "text-primary bg-primary/10"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <item.icon
+                      className={`w-4 h-4 ${isActive(item.href) ? "text-primary" : "text-gray-500"}`}
+                    />
+                    <span>{t(item.labelKey)}</span>
+                  </Link>
+                ))}
+              </nav>
+
+              <div className="px-4">
+                <div className="w-full h-px bg-gray-200" />
+              </div>
+
+              {!isAuthenticated ? (
+                <div className="px-2 space-y-2">
+                  <button
+                    onClick={handleLogin}
+                    className="w-full flex items-center space-x-3 px-3 py-3 text-sm font-medium text-gray-700 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg"
+                  >
+                    <LogIn className="w-4 h-4 text-primary" />
+                    <span>{t("profile_login")}</span>
+                  </button>
+                  <button
+                    onClick={handleRegister}
+                    className="w-full flex items-center space-x-3 px-3 py-3 text-sm font-medium text-gray-700 hover:bg-primary/10 hover:text-primary transition-all duration-200 rounded-lg"
+                  >
+                    <UserPlus className="w-4 h-4 text-primary" />
+                    <span>{t("profile_register")}</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="px-2 space-y-2">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {user?.name}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user?.email}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleProfileClick}
+                    className="w-full flex items-center space-x-3 px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200 rounded-lg"
+                  >
+                    <Settings className="w-4 h-4 text-gray-600" />
+                    <span>{t("profile_dashboard")}</span>
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    disabled={loading}
+                    className="w-full flex items-center space-x-3 px-3 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200 rounded-lg"
+                  >
+                    <LogOut className="w-4 h-4 text-red-600" />
+                    <span>
+                      {loading ? t("profile_logging_out") : t("profile_logout")}
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              <div className="px-4">
+                <div className="w-full h-px bg-gray-200" />
+              </div>
+
+              <div className="px-4">
+                <div className="relative">
+                  <select
+                    value={language}
+                    onChange={(e) =>
+                      setLanguage(e.target.value as LanguageCode)
+                    }
+                    className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                  >
+                    {supportedLanguages.map((lang) => (
+                      <option key={lang} value={lang}>
+                        {lang.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                  <Globe className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
