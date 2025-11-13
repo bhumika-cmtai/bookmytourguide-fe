@@ -98,3 +98,44 @@ export const createAndVerifyBooking = createAsyncThunk<
     return rejectWithValue(error.message || "An unknown error occurred during booking.");
   }
 });
+
+export const createFinalPaymentOrder = createAsyncThunk(
+  "tourGuideBooking/createFinalOrder",
+  async (bookingId: string, { rejectWithValue }) => {
+    try {
+      // The backend response is { success: true, data: { ...order_details } }
+      const response = await apiService.post<{ data: any }>(
+        `/api/tourguide/${bookingId}/create-final-order`
+      );
+      if (response.success && response.data) {
+        return response.data; // This will be the Razorpay order object
+      }
+      throw new Error(response.message || "Failed to create final payment order");
+    } catch (error: any) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  }
+);
+
+// Verifies the final payment after Razorpay handler returns
+export const verifyFinalPayment = createAsyncThunk<
+  Booking,
+  { bookingId: string; razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }
+>(
+  "tourGuideBooking/verifyFinalPayment",
+  async (paymentData, { rejectWithValue }) => {
+    try {
+      const { bookingId, ...verificationDetails } = paymentData;
+      const response = await apiService.post<{ data: Booking }>(
+        `/api/tourguide/${bookingId}/verify-final-payment`,
+        verificationDetails
+      );
+      if (response.success && response.data) {
+        return response.data; // Returns the updated booking object
+      }
+      throw new Error(response.message || "Failed to verify final payment");
+    } catch (error: any) {
+      return handleThunkError(error, rejectWithValue);
+    }
+  }
+);

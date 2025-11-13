@@ -8,7 +8,10 @@ import { fetchUserBookings,
   reassignGuideThunk,
   updateBookingStatusThunk,
   fetchMyGuideBookingsThunk,
-  fetchMyGuideBookingByIdThunk
+  fetchMyGuideBookingByIdThunk,
+  verifyFinalPayment,
+  createFinalPaymentOrder,
+  fetchTourGuideBookingById
     } from '@/lib/redux/thunks/tourGuideBooking/userTourGuideBookingThunks';
 
 interface UserBookingsState {
@@ -61,13 +64,13 @@ const userTourGuideBookingSlice = createSlice({
         state.error = action.payload as string;
       })
       // Cancelling a booking
-      .addCase(cancelBooking.fulfilled, (state, action: PayloadAction<Booking>) => {
-        // Find the cancelled booking and update its status
-        const index = state.bookings.findIndex(b => b._id === action.payload._id);
-        if (index !== -1) {
-          state.bookings[index] = action.payload;
-        }
-      })
+      // .addCase(cancelBooking.fulfilled, (state, action: PayloadAction<Booking>) => {
+      //   // Find the cancelled booking and update its status
+      //   const index = state.bookings.findIndex(b => b._id === action.payload._id);
+      //   if (index !== -1) {
+      //     state.bookings[index] = action.payload;
+      //   }
+      // })
       .addCase(fetchAllBookingsAdmin.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -141,6 +144,45 @@ const userTourGuideBookingSlice = createSlice({
       .addCase(fetchMyGuideBookingByIdThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      .addCase(fetchTourGuideBookingById.pending, (state) => {
+        state.loading = true;
+        state.currentBooking = null;
+      })
+      .addCase(fetchTourGuideBookingById.fulfilled, (state, action: PayloadAction<Booking>) => {
+        state.loading = false;
+        state.currentBooking = action.payload;
+      })
+      .addCase(fetchTourGuideBookingById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // --- Verifying the final payment ---
+      .addCase(verifyFinalPayment.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(verifyFinalPayment.fulfilled, (state, action: PayloadAction<Booking>) => {
+        state.loading = false;
+        const updatedBooking = action.payload;
+        // Update the booking in the detail view
+        state.currentBooking = updatedBooking;
+        // Update the same booking in the main list for UI consistency
+        state.bookings = state.bookings.map((b) =>
+          b._id === updatedBooking._id ? updatedBooking : b
+        );
+      })
+      .addCase(verifyFinalPayment.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // --- Cancelling a booking ---
+      .addCase(cancelBooking.fulfilled, (state, action: PayloadAction<Booking>) => {
+        const updatedBooking = action.payload;
+        state.currentBooking = updatedBooking;
+        state.bookings = state.bookings.map((b) =>
+          b._id === updatedBooking._id ? updatedBooking : b
+        );
       });
   },
 });
