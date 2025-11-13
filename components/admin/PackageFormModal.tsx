@@ -1,14 +1,15 @@
 "use client";
-
-import React, { useState, useEffect, FormEvent } from 'react';
-import { AdminPackage } from '@/types/admin';
+import React, { useState, useEffect, FormEvent, useRef } from 'react';
+import { AdminPackage, AdminLocation } from '@/types/admin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Plus, Trash2, RefreshCw, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, RefreshCw, X, ChevronDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PackageFormData {
   title: string;
@@ -19,6 +20,7 @@ interface PackageFormData {
   locations: string[];
   images: (File | string)[];
   isActive: boolean;
+  isFeatured: boolean; 
 }
 
 interface PackageFormModalProps {
@@ -27,13 +29,32 @@ interface PackageFormModalProps {
   onSave: (formData: FormData) => Promise<void>;
   editingPackage: AdminPackage | null;
   isLoading: boolean;
+  allLocations: AdminLocation[];
 }
 
-export function PackageFormModal({ isOpen, onClose, onSave, editingPackage, isLoading }: PackageFormModalProps) {
+export function PackageFormModal({ 
+    isOpen, 
+    onClose, 
+    onSave, 
+    editingPackage, 
+    isLoading, 
+    allLocations 
+}: PackageFormModalProps) {
   const [formData, setFormData] = useState<PackageFormData>({
-    title: '', description: '', price: 0, basePrice: 0, duration: '',
-    locations: [''], images: [], isActive: true
+    title: '', 
+    description: '', 
+    price: 0, 
+    basePrice: 0, 
+    duration: '',
+    locations: [], 
+    images: [], 
+    isActive: true, 
+    isFeatured: false
   });
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (editingPackage) {
@@ -44,16 +65,28 @@ export function PackageFormModal({ isOpen, onClose, onSave, editingPackage, isLo
         basePrice: editingPackage.basePrice ?? 0,
         duration: editingPackage.duration,
         isActive: editingPackage.isActive,
-        locations: editingPackage.locations?.length ? editingPackage.locations : [''],
+        isFeatured: editingPackage.isFeatured || false,
+        locations: editingPackage.locations || [],
         images: editingPackage.images || [],
       });
     } else {
       setFormData({
         title: '', description: '', price: 0, basePrice: 0, duration: '',
-        locations: [''], images: [], isActive: true
+        locations: [], images: [], isActive: true, isFeatured: false 
       });
     }
   }, [editingPackage, isOpen]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -65,18 +98,19 @@ export function PackageFormModal({ isOpen, onClose, onSave, editingPackage, isLo
     formDataToSend.append('basePrice', formData.basePrice.toString());
     formDataToSend.append('duration', formData.duration);
     formDataToSend.append('isActive', formData.isActive.toString());
-
-    formData.locations.filter(loc => loc.trim()).forEach(loc => {
-      formDataToSend.append('locations', loc);
+    formDataToSend.append('isFeatured', formData.isFeatured.toString());
+    
+    formData.locations.forEach(locId => {
+      formDataToSend.append('locations', locId);
     });
-
+    
     const newImageFiles = formData.images.filter(img => img instanceof File) as File[];
     const existingImageUrls = formData.images.filter(img => typeof img === 'string') as string[];
-
+    
     newImageFiles.forEach(file => {
       formDataToSend.append('images', file);
     });
-
+    
     if (editingPackage) {
       existingImageUrls.forEach(url => {
         formDataToSend.append('existingImages', url);
@@ -86,19 +120,20 @@ export function PackageFormModal({ isOpen, onClose, onSave, editingPackage, isLo
     await onSave(formDataToSend);
   };
 
-  const handleArrayFieldChange = (field: 'locations', index: number, value: string) => {
-    const newArray = [...formData[field]];
-    newArray[index] = value;
-    setFormData({ ...formData, [field]: newArray });
-  };
-  
-  const addArrayField = (field: 'locations') => {
-    setFormData({ ...formData, [field]: [...formData[field], ''] });
+  const handleSelectLocation = (locationId: string) => {
+    setFormData((prev) => {
+        const newLocations = prev.locations.includes(locationId)
+            ? prev.locations.filter((id) => id !== locationId)
+            : [...prev.locations, locationId];
+        return { ...prev, locations: newLocations };
+    });
   };
 
-  const removeArrayField = (field: 'locations', index: number) => {
-    const newArray = formData[field].filter((_, i) => i !== index);
-    setFormData({ ...formData, [field]: newArray.length ? newArray : [''] });
+  const removeLocation = (locationId: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      locations: prev.locations.filter(id => id !== locationId) 
+    }));
   };
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,6 +145,16 @@ export function PackageFormModal({ isOpen, onClose, onSave, editingPackage, isLo
   const removeImage = (indexToRemove: number) => {
     setFormData(prev => ({ ...prev, images: prev.images.filter((_, index) => index !== indexToRemove) }));
   };
+
+  // Filter locations based on search term
+  const filteredLocations = allLocations.filter(location =>
+    location.placeName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Get selected location objects for displaying badges
+  const selectedLocations = allLocations.filter(loc => 
+    formData.locations.includes(loc._id)
+  );
   
   if (!isOpen) return null;
 
@@ -122,29 +167,153 @@ export function PackageFormModal({ isOpen, onClose, onSave, editingPackage, isLo
         </CardHeader>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <CardContent className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
-            {/* Form Fields */}
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2"><Label htmlFor="title">Title *</Label><Input id="title" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} /></div>
-              <div className="space-y-2"><Label htmlFor="duration">Duration *</Label><Input id="duration" required placeholder="e.g., 7 Days" value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: e.target.value })} /></div>
+              <div className="space-y-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input 
+                  id="title" 
+                  required 
+                  value={formData.title} 
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration *</Label>
+                <Input 
+                  id="duration" 
+                  required 
+                  placeholder="e.g., 7 Days" 
+                  value={formData.duration} 
+                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })} 
+                />
+              </div>
             </div>
-            <div className="space-y-2"><Label htmlFor="description">Description *</Label><Textarea id="description" required rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} /></div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description *</Label>
+              <Textarea 
+                id="description" 
+                required 
+                rows={4} 
+                value={formData.description} 
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
+              />
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2"><Label htmlFor="price">Price (₹) *</Label><Input id="price" type="number" required min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} /></div>
-              <div className="space-y-2"><Label htmlFor="basePrice">Base Price (₹) *</Label><Input id="basePrice" type="number" required min="0" value={formData.basePrice} onChange={(e) => setFormData({ ...formData, basePrice: parseFloat(e.target.value) || 0 })} /></div>
+              <div className="space-y-2">
+                <Label htmlFor="price">Price (₹) *</Label>
+                <Input 
+                  id="price" 
+                  type="number" 
+                  required 
+                  min="0" 
+                  value={formData.price} 
+                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="basePrice">Base Price (₹) *</Label>
+                <Input 
+                  id="basePrice" 
+                  type="number" 
+                  required 
+                  min="0" 
+                  value={formData.basePrice} 
+                  onChange={(e) => setFormData({ ...formData, basePrice: parseFloat(e.target.value) || 0 })} 
+                />
+              </div>
             </div>
             
-            {/* Dynamic Locations */}
-            <div className="space-y-3 p-4 border rounded-lg">
-              <Label className="font-semibold">Locations</Label>
-              {formData.locations.map((item, index) => (
-                <div key={index} className="flex gap-2 items-center">
-                  <Input type="text" value={item} onChange={(e) => handleArrayFieldChange('locations', index, e.target.value)} placeholder="Enter location..." />
-                  {/* ✅ FIX: Added type="button" to prevent form submission */}
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeArrayField('locations', index)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+            {/* Location Multi-Select Dropdown */}
+            <div className="space-y-2">
+              <Label className="font-semibold">Locations *</Label>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-2 border rounded-md bg-background hover:bg-accent transition-colors",
+                    isDropdownOpen && "ring-2 ring-ring"
+                  )}
+                >
+                  <span className="text-sm text-muted-foreground">
+                    {formData.locations.length === 0 
+                      ? 'Select locations...' 
+                      : `${formData.locations.length} location${formData.locations.length > 1 ? 's' : ''} selected`
+                    }
+                  </span>
+                  <ChevronDown className={cn(
+                    "w-4 h-4 transition-transform",
+                    isDropdownOpen && "transform rotate-180"
+                  )} />
+                </button>
+
+                {isDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-2 bg-popover border rounded-md shadow-lg">
+                    <div className="p-2 border-b">
+                      <Input
+                        type="text"
+                        placeholder="Search locations..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto p-2">
+                      {filteredLocations.length === 0 ? (
+                        <div className="text-sm text-muted-foreground text-center py-4">
+                          No locations found
+                        </div>
+                      ) : (
+                        filteredLocations.map((location) => {
+                          const isSelected = formData.locations.includes(location._id);
+                          return (
+                            <div
+                              key={location._id}
+                              onClick={() => handleSelectLocation(location._id)}
+                              className={cn(
+                                "flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors",
+                                isSelected ? "bg-accent" : "hover:bg-accent/50"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-4 h-4 border rounded flex items-center justify-center flex-shrink-0",
+                                isSelected && "bg-primary border-primary"
+                              )}>
+                                {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                              </div>
+                              <span className="text-sm flex-1">{location.placeName}</span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Selected Locations Display */}
+              {selectedLocations.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3 p-3 bg-muted/50 rounded-md">
+                  {selectedLocations.map(loc => (
+                    <Badge 
+                      key={loc._id} 
+                      variant="secondary"
+                      className="pl-3 pr-1 py-1 flex items-center gap-1"
+                    >
+                      {loc.placeName}
+                      <button
+                        type="button"
+                        onClick={() => removeLocation(loc._id)}
+                        className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
                 </div>
-              ))}
-              {/* ✅ FIX: Added type="button" to prevent form submission */}
-              <Button type="button" variant="outline" size="sm" onClick={() => addArrayField('locations')}><Plus className="w-4 h-4 mr-2" /> Add Location</Button>
+              )}
             </div>
             
             {/* Image Upload & Preview */}
@@ -153,24 +322,53 @@ export function PackageFormModal({ isOpen, onClose, onSave, editingPackage, isLo
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                 {formData.images.map((img, index) => (
                   <div key={index} className="relative group aspect-square">
-                    <img src={typeof img === 'string' ? img : URL.createObjectURL(img)} alt="Package" className="w-full h-full object-cover rounded-md" />
-                    {/* ✅ FIX: Added type="button" to prevent form submission */}
-                    <button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
+                    <img 
+                      src={typeof img === 'string' ? img : URL.createObjectURL(img)} 
+                      alt={`Package preview ${index + 1}`} 
+                      className="w-full h-full object-cover rounded-md" 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => removeImage(index)} 
+                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                   </div>
                 ))}
               </div>
-              <Input id="images" type="file" multiple accept="image/*" onChange={handleImageChange} className="mt-2" />
+              <Input 
+                id="images" 
+                type="file" 
+                multiple 
+                accept="image/*" 
+                onChange={handleImageChange} 
+                className="mt-2" 
+              />
             </div>
             
-            <div className="flex items-center gap-3 pt-4">
-              <Checkbox id="isActive" checked={formData.isActive} onCheckedChange={(checked) => setFormData({ ...formData, isActive: !!checked })} />
-              <Label htmlFor="isActive" className="cursor-pointer">Make package active on the website</Label>
+            {/* Checkboxes */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+              <div className="flex items-center gap-3 p-3 border rounded-md">
+                <Checkbox 
+                  id="isActive" 
+                  checked={formData.isActive} 
+                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: !!checked })} 
+                />
+                <Label htmlFor="isActive" className="cursor-pointer">Make package active</Label>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-md">
+                <Checkbox 
+                  id="isFeatured" 
+                  checked={formData.isFeatured} 
+                  onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: !!checked })} 
+                />
+                <Label htmlFor="isFeatured" className="cursor-pointer">Mark as "Featured"</Label>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-4 border-t pt-6 bg-muted/50 flex-shrink-0">
-            {/* ✅ FIX: Added type="button" to prevent form submission */}
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            {/* This is the ONLY button that should submit the form */}
             <Button type="submit" disabled={isLoading}>
               {isLoading && <RefreshCw className="w-4 h-4 mr-2 animate-spin" />}
               {isLoading ? 'Saving...' : (editingPackage ? 'Update Package' : 'Create Package')}

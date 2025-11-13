@@ -16,6 +16,12 @@ import { RootState, AppDispatch } from "@/lib/store";
 import { fetchPackages } from "@/lib/redux/thunks/admin/packageThunks";
 import { AdminPackage } from "@/types/admin";
 
+// ✅ Import BOTH thunks now
+import { fetchPackageById, fetchRecommendedPackages } from "@/lib/redux/thunks/admin/packageThunks";
+
+// ✅ Import the new slider component
+import { RecommendedPackagesSlider } from "@/components/RecommendedPackagesSlider";
+
 // Skeleton Component for Loading State
 const TourDetailSkeleton = () => (
   <div className="container max-w-7xl mx-auto px-4 py-12 animate-pulse">
@@ -67,6 +73,7 @@ export default function TourDetailPage({ params }: { params: { id: string } }) {
   // --- Fetch data from Redux store ---
   const {
     items: packages,
+    recommended,
     loading,
     error,
   } = useSelector((state: RootState) => state.packages);
@@ -74,6 +81,14 @@ export default function TourDetailPage({ params }: { params: { id: string } }) {
 
   const [range, setRange] = useState<DateRange | undefined>();
   const [numberOfTourists, setNumberOfTourists] = useState(1);
+  useEffect(() => {
+    // For efficiency, it's better to fetch only the specific package for this page.
+    // fetchPackageById handles adding it to the 'items' list.
+    dispatch(fetchPackageById(params.id));
+    
+    // Fetch the list of recommended packages
+    dispatch(fetchRecommendedPackages({ limit: 8 })); // Fetch more items for a better slider look
+  }, [dispatch, params.id]);
 
   useEffect(() => {
     // Fetch packages if they are not already in the store
@@ -315,6 +330,15 @@ export default function TourDetailPage({ params }: { params: { id: string } }) {
             </div>
           </aside>
         </div>
+        <div className="mt-24 border-t pt-16">
+            <RecommendedPackagesSlider
+                title="You Might Also Like"
+                // Filter out the current package from the recommendations
+                packages={recommended.filter(p => p._id !== tour._id)}
+                loading={loading === 'pending' && recommended.length === 0}
+            />
+        </div>
+
       </div>
     </div>
   );

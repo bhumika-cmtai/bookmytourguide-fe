@@ -151,12 +151,6 @@ export function TourCategories() {
                         <h3 className="text-xl font-bold text-primary">
                           {pkg.title}
                         </h3>
-                        <div className="flex items-center mt-1">
-                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                          <span className="text-sm text-muted-foreground ml-1">
-                            {pkg.averageRating || "N/A"}
-                          </span>
-                        </div>
                       </div>
                     </div>
                     <p className="text-muted-foreground mb-4 text-balance text-sm leading-relaxed">

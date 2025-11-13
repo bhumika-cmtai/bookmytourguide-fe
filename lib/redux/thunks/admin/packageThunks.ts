@@ -75,3 +75,24 @@ export const fetchPackageById = createAsyncThunk<AdminPackage, string>(
     }
   }
 );
+
+interface FetchRecommendedArgs {
+  limit?: number;
+}
+
+export const fetchRecommendedPackages = createAsyncThunk<AdminPackage[], FetchRecommendedArgs | void>(
+  'packages/fetchRecommended',
+  async (args, { rejectWithValue }) => {
+    try {
+      // API URL mein limit query parameter add karein agar woh maujood hai
+      const url = args?.limit 
+          ? `/api/packages/recommended?limit=${args.limit}` 
+          : '/api/packages/recommended';
+
+      const response = await apiService.get<AdminPackage[]>(url);
+      return response.data || [];
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to fetch recommended packages');
+    }
+  }
+);

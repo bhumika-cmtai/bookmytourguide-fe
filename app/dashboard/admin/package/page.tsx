@@ -2,7 +2,9 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/lib/hooks';
-import { AdminPackage } from '@/types/admin';
+import { AdminPackage, AdminLocation } from '@/types/admin';
+import { fetchAdminLocations } from '@/lib/redux/thunks/admin/locationThunks';
+
 // Import thunks from the dedicated package thunks file
 import { fetchPackages, addPackage, updatePackage, deletePackage } from '@/lib/redux/thunks/admin/packageThunks';
 import { toast } from 'react-toastify';
@@ -17,6 +19,7 @@ export default function PackagesAdminPage() {
   const dispatch = useAppDispatch();
   // ✅ UPDATED: Selecting state from the dedicated 'packages' slice
   const { items: packages, loading, error, currentAction } = useAppSelector((state) => state.packages);
+  const allLocations = useAppSelector((state) => state.admin.locations);
 
   // State for UI and filtering/pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,6 +36,7 @@ export default function PackagesAdminPage() {
 
   // Fetch initial data when the component mounts
   useEffect(() => {
+    dispatch(fetchAdminLocations());
     dispatch(fetchPackages());
   }, [dispatch]);
   
@@ -230,8 +234,8 @@ export default function PackagesAdminPage() {
         onClose={() => { setShowForm(false); setEditingPackage(null); }}
         onSave={handleSave}
         editingPackage={editingPackage}
-        // ✅ UPDATED: Loading state for the modal is more specific
         isLoading={loading === 'pending' && (currentAction === 'adding' || currentAction === 'updating')}
+        allLocations={allLocations} // Pass the fetched locations here
       />
       
       {/* Reusable Alert Dialog for Delete Confirmation */}

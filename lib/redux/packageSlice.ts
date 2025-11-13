@@ -5,20 +5,23 @@ import {
   addPackage,
   updatePackage,
   deletePackage,
-  fetchPackageById
+  fetchPackageById,
+  fetchRecommendedPackages 
 } from './thunks/admin/packageThunks'; // Package thunks ko import karein
 
 // ✅ Define a state shape specifically for this slice
 interface PackageState {
   items: AdminPackage[];
+  recommended: AdminPackage[]; 
   loading: 'idle' | 'pending' | 'succeeded' | 'failed'; // More descriptive loading state
   error: string | null;
-  currentAction: 'fetching' | 'adding' | 'updating' | 'deleting' | null;
+  currentAction: 'fetching' | 'adding' | 'updating' | 'deleting' | 'fetchingRecommended' |null;
 }
 
 const initialState: PackageState = {
   items: [],
   loading: 'idle',
+  recommended: [], 
   error: null,
   currentAction: null,
 };
@@ -114,6 +117,22 @@ const packageSlice = createSlice({
       })
       .addCase(fetchPackageById.rejected, (state, action) => {
         state.loading = 'failed';
+        state.error = action.payload as string;
+      })
+      .addCase(fetchRecommendedPackages.pending, (state) => {
+        state.loading = 'pending';
+        state.currentAction = 'fetchingRecommended'; // Specific action type
+        state.error = null;
+      })
+      .addCase(fetchRecommendedPackages.fulfilled, (state, action: PayloadAction<AdminPackage[]>) => {
+        state.loading = 'succeeded';
+        state.currentAction = null;
+        // Yeh 'recommended' state ko update karta hai, 'items' ko nahi.
+        state.recommended = action.payload; 
+      })
+      .addCase(fetchRecommendedPackages.rejected, (state, action) => {
+        state.loading = 'failed';
+        state.currentAction = null;
         state.error = action.payload as string;
       });
   },
