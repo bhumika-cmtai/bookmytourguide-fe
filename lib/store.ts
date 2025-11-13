@@ -12,6 +12,7 @@ import bookingReducer from "@/lib/redux/bookingSlice"
 import tourGuideBookingReducer from "@/lib/redux/tourGuideBookingSlice"
 import userTourGuideBookingReducer from "@/lib/redux/userTourGuideBookingSlice"
 import customReducer from "@/lib/redux/customTourSlice";
+import dashboardReducer from "@/lib/redux/dashboardSlice"
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -26,7 +27,8 @@ export const store = configureStore({
     bookings: bookingReducer,
     tourGuideBooking: tourGuideBookingReducer,
     customTour: customReducer,
-    userTourGuideBookings: userTourGuideBookingReducer
+    userTourGuideBookings: userTourGuideBookingReducer,
+    dashboard: dashboardReducer
   },
 });
 

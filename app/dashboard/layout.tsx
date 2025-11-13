@@ -13,19 +13,32 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, isAuthenticated, loading, fetchCurrentUser } = useAuth();
+  const [isVerifying, setIsVerifying] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, loading, router]);
+    // Check for the user only on the initial mount
+    fetchCurrentUser().finally(() => {
+      setIsVerifying(false); // Verification is complete
+    });
+  }, [fetchCurrentUser]);
 
   useEffect(() => {
-    if (!user) {
-      fetchCurrentUser();
+    // Only redirect if verification is complete and the user is not authenticated
+    if (!isVerifying && !isAuthenticated) {
+      router.push("/login");
     }
-  }, [user, fetchCurrentUser]);
+  }, [isAuthenticated, isVerifying, router]);
+
+  // Show a loader while verifying, loading, or if the user is not yet authenticated.
+  if (isVerifying || loading || !isAuthenticated || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
 
   if (loading || !isAuthenticated || !user) {
     return (

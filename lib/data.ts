@@ -72,6 +72,13 @@ interface PopulatedTour {
 // --- Main Booking Interface ---
 // Yeh aapke poore project ke liye 'Booking' ki EKLOTI (single) definition hai.
 
+export interface CancellationDetails {
+  cancellerId: string; // Corresponds to mongoose.Schema.Types.ObjectId
+  cancellerRole: string;
+  cancellerName: string;
+}
+
+
 export interface Booking {
   _id: string;
   tour: string | PopulatedTour;
@@ -85,6 +92,7 @@ export interface Booking {
   remainingAmount: number;
   paymentId: string;
   status: "Upcoming" | "Completed" | "Cancelled";
+  cancelledBy?: CancellationDetails | null;
   paymentStatus: "Advance Paid" | "Fully Paid" | "Refunded";
   createdAt: string;
   updatedAt: string;
@@ -176,7 +184,7 @@ export type Guide = {
     unavailableDates:Date[];
 };
   
-export type BookingStatus = "Upcoming" | "Completed" | "Cancelled";
+export type BookingStatus = "Upcoming" | "Completed" | "Cancelled" | "Awaiting Substitute";
 export type PaymentStatus = "Advance Paid" | "Fully Paid" | "Refunded";
 
 // NOTE: The second conflicting 'Booking' interface has been REMOVED.

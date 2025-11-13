@@ -31,6 +31,13 @@ interface SubmitPayload {
   acknowledged: boolean;
 }
 
+interface UpdateStatusPayload {
+  requestId: string;
+  status: string;
+  quoteAmount?: number;
+  adminComment?: string;
+}
+
 const handleThunkError = (error: any, rejectWithValue: Function) => {
   const message = error.message || "An unknown error occurred";
   return rejectWithValue(message);
@@ -103,16 +110,17 @@ export const fetchCustomTourRequestById = createAsyncThunk(
   }
 );
 
+
 export const updateCustomTourRequestStatus = createAsyncThunk(
   "customTour/updateStatus",
   async (
-    { requestId, status }: { requestId: string; status: string },
+    { requestId, status, quoteAmount, adminComment }: UpdateStatusPayload,
     { rejectWithValue }
   ) => {
     try {
       const response = await apiService.patch(
         `/api/custom-tour-requests/${requestId}/status`,
-        { status }
+        { status, quoteAmount, adminComment }
       );
       if (response.success && response.data) {
         return response.data;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useParams, notFound, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation"; // useRouter import karein
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { fetchCustomTourRequestById } from "@/lib/redux/thunks/customTour/customTourThunks";
 import {
@@ -20,56 +20,83 @@ import {
   MapPin,
   Calendar,
   Languages,
-  IndianRupee,
   CreditCard,
   ShieldCheck,
   CheckCircle,
   Loader2,
   AlertCircle,
+  MessageSquare,
+  ArrowLeft, // Back icon import karein
 } from "lucide-react";
 
+// Status ke liye alag-alag colors define karne wala helper function
+const getStatusVariant = (status: string) => {
+  switch (status) {
+    case "Pending":
+      return "destructive";
+    case "Quoted":
+      return "default";
+    case "Booked":
+      return "secondary";
+    case "Rejected":
+      return "outline";
+    default:
+      return "outline";
+  }
+};
+
 const PaymentCard = ({ request }: { request: any }) => {
-  // This logic can be further enhanced with real payment integration
-  const { status, quotedPrice } = request;
+  const { status, quoteAmount } = request;
 
   if (status === "Pending") {
     return (
       <Alert>
         <ShieldCheck className="h-4 w-4" />
         <AlertTitle>Awaiting Quote</AlertTitle>
-        <AlertDescription>Our team is reviewing your request.</AlertDescription>
+        <AlertDescription>
+          Our team is reviewing your request and will provide a quote shortly.
+        </AlertDescription>
       </Alert>
     );
   }
-  if (status === "Quoted" && quotedPrice) {
-    const advanceAmount = quotedPrice * 0.2;
+
+  // ✅ FIX: Pay button ko "Quoted" status ke liye alag se handle karein
+  // if (status === "Quoted" && quoteAmount > 0) {
+  //   const advanceAmount = quoteAmount * 0.2; // 20% advance
+  //   return (
+  //     <div className="space-y-4 text-center">
+  //       <p>
+  //         To confirm your booking, please pay a 20% advance of{" "}
+  //         <span className="font-bold text-lg">
+  //           ₹{advanceAmount.toLocaleString()}
+  //         </span>
+  //         .
+  //       </p>
+  //       <Button size="lg" className="w-full font-bold">
+  //         <CreditCard className="w-5 h-5 mr-2" /> Pay Advance Now
+  //       </Button>
+  //     </div>
+  //   );
+  // }
+
+  if (status === "Booked") {
     return (
-      <div className="space-y-4">
-        <p>
-          To confirm, please pay 20% advance:{" "}
-          <span className="font-bold">₹{advanceAmount.toLocaleString()}</span>.
-        </p>
-        <Button size="lg" className="w-full">
-          <CreditCard className="w-5 h-5 mr-2" /> Pay Advance
-        </Button>
-      </div>
-    );
-  }
-  if (status === "Booked" && quotedPrice) {
-    return (
-      <Alert>
-        <CheckCircle className="h-4 w-4" />
-        <AlertTitle>Booking Confirmed!</AlertTitle>
-        <AlertDescription>Your advance has been paid.</AlertDescription>
+      <Alert className="bg-green-50 border-green-200">
+        <CheckCircle className="h-4 w-4 text-green-700" />
+        <AlertTitle className="text-green-800">Booking Confirmed!</AlertTitle>
+        <AlertDescription className="text-green-700">
+          Your tour is booked. We will contact you with the final itinerary.
+        </AlertDescription>
       </Alert>
     );
   }
   return null;
 };
 
-export default function CustomRequestDetailPage() {
+export default function CustomRequestUserDetailPage() {
   const dispatch = useAppDispatch();
   const params = useParams();
+  const router = useRouter(); // router ko initialize karein
   const requestId = params.requestId as string;
 
   const {
@@ -86,98 +113,113 @@ export default function CustomRequestDetailPage() {
 
   if (detailLoading)
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   if (detailError)
     return (
       <div className="p-8 text-center">
         <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
-        <h2 className="mt-4 text-xl font-bold">Error</h2>
-        <p>{detailError}</p>
+        <h2 className="mt-4 text-xl font-bold">Could Not Load Request</h2>
+        <p className="text-muted-foreground">{detailError}</p>
       </div>
     );
-  if (!request) return (<div>Not found</div>);
+  if (!request)
+    return (
+      <div className="p-8 text-center">
+        <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+        <h2 className="mt-4 text-xl font-bold">Request Not Found</h2>
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-muted/50 p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
+        {/* ✅ FIX: Back button yahan add kiya gaya hai */}
+        <Button
+          variant="outline"
+          onClick={() => router.back()}
+          className="mb-6"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to My Requests
+        </Button>
+
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Your Custom Request</CardTitle>
+                <CardTitle className="text-2xl">Your Custom Request</CardTitle>
+                <CardDescription>Request ID: {request._id}</CardDescription>
               </CardHeader>
               <CardContent className="grid md:grid-cols-2 gap-6 text-sm">
-                <div className="flex gap-3">
-                  <MapPin className="w-4 h-4 mt-1" />
-                  <div>
-                    <p className="text-muted-foreground">Destinations</p>
-                    <p className="font-semibold">
-                      {request.selectedLocations
-                        ?.map((loc: any) => loc.placeName)
-                        .join(", ") || "N/A"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <Calendar className="w-4 h-4 mt-1" />
-                  <div>
-                    <p className="text-muted-foreground">Dates</p>
-                    <p className="font-semibold">
-                      {request.dateRange?.from
-                        ? new Date(request.dateRange.from).toLocaleDateString()
-                        : "Flexible"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <User className="w-4 h-4 mt-1" />
-                  <div>
-                    <p className="text-muted-foreground">Travelers</p>
-                    <p className="font-semibold">{request.numTravelers}</p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <Languages className="w-4 h-4 mt-1" />
-                  <div>
-                    <p className="text-muted-foreground">Language</p>
-                    <p className="font-semibold">
-                      {request.selectedLanguage?.languageName || "N/A"}
-                    </p>
-                  </div>
-                </div>
+                <DetailItem
+                  icon={MapPin}
+                  label="Destinations"
+                  value={
+                    request.selectedLocations
+                      ?.map((loc: any) => loc.placeName)
+                      .join(", ") || "N/A"
+                  }
+                />
+                <DetailItem
+                  icon={Calendar}
+                  label="Dates"
+                  value={
+                    request.dateRange?.from
+                      ? `${new Date(
+                          request.dateRange.from
+                        ).toLocaleDateString()} - ${new Date(
+                          request.dateRange.to
+                        ).toLocaleDateString()}`
+                      : "Flexible"
+                  }
+                />
+                <DetailItem icon={User} label="Travelers" value={request.numTravelers} />
+                <DetailItem
+                  icon={Languages}
+                  label="Language"
+                  value={request.selectedLanguage?.languageName || "N/A"}
+                />
               </CardContent>
             </Card>
-            {request.status !== "Pending" && (
+
+            {request.status !== "Pending" && request.adminComment && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Our Custom Quote</CardTitle>
+                  <CardTitle>A Note From Our Team</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Admin Notes: {request.adminNotes || "No additional notes."}
-                  </p>
+                  <div className="flex items-start gap-3">
+                    <MessageSquare className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
+                    <p className="text-muted-foreground italic">
+                      "{request.adminComment}"
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}
           </div>
           <div className="sticky top-24">
-            <Card>
-              <CardHeader>
+            <Card className="shadow-lg">
+              <CardHeader className="text-center">
                 <CardTitle>Booking Status</CardTitle>
-                <Badge className="w-fit">{request.status}</Badge>
+                <div className="flex justify-center pt-2">
+                  <Badge variant={getStatusVariant(request.status)} className="px-4 py-1 text-base">
+                    {request.status}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent>
-                {request.quotedPrice && (
+                {request.quoteAmount > 0 && (
                   <>
                     <div className="flex justify-between items-baseline mb-4">
                       <p className="text-lg text-muted-foreground">
                         Total Quote
                       </p>
                       <p className="text-4xl font-extrabold text-primary">
-                        ₹{request.quotedPrice.toLocaleString()}
+                        ₹{request.quoteAmount.toLocaleString()}
                       </p>
                     </div>
                     <Separator className="my-6" />
@@ -192,3 +234,14 @@ export default function CustomRequestDetailPage() {
     </div>
   );
 }
+
+// Reusable component for displaying details
+const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | number }) => (
+    <div className="flex gap-3">
+        <Icon className="w-5 h-5 mt-0.5 text-muted-foreground" />
+        <div>
+            <p className="text-muted-foreground">{label}</p>
+            <p className="font-semibold">{value}</p>
+        </div>
+    </div>
+);

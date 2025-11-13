@@ -1,3 +1,5 @@
+// File: components/AdminBookingDetailPage.tsx
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -10,8 +12,8 @@ import {
   updateBookingStatus,
   assignSubstituteGuide,
 } from "@/lib/redux/thunks/booking/bookingThunks";
-import { getAllGuides } from "@/lib/redux/thunks/guide/guideThunk"; // Maan rahe hain ki yeh thunk aapke paas hai
-import type { Booking, Guide, BookingStatus } from "@/lib/data";
+import { getAllGuides } from "@/lib/redux/thunks/guide/guideThunk";
+import type { Booking, Guide, BookingStatus,PaymentStatus  } from "@/lib/data";
 import {
   Card,
   CardContent,
@@ -39,6 +41,8 @@ import {
   Edit,
   Users,
   Info,
+  UserX,
+  Shield
 } from "lucide-react";
 
 const getStatusVariant = (status: BookingStatus) => {
@@ -140,7 +144,11 @@ export default function AdminBookingDetailPage() {
 
   const availableGuides = useMemo(() => {
     if (!guides || !booking?.guide) return [];
-    return guides.filter((g) => g._id !== booking.guide._id);
+    // Ensure booking.guide has an _id before filtering
+    const currentGuideId =
+      typeof booking.guide === "object" ? booking.guide._id : null;
+    if (!currentGuideId) return guides;
+    return guides.filter((g) => g._id !== currentGuideId);
   }, [guides, booking]);
 
   if (bookingLoading || guidesLoading) {
@@ -192,6 +200,36 @@ export default function AdminBookingDetailPage() {
       <p className="text-muted-foreground mb-8">Booking ID: {booking._id}</p>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+        {booking.status === "Cancelled" && booking.cancelledBy && (
+            <Card className="border-destructive bg-destructive/10">
+              <CardHeader>
+                <CardTitle className="text-destructive flex items-center gap-2">
+                  <Info className="w-5 h-5" />
+                  Cancellation Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-2">
+                <div className="flex items-center gap-3">
+                  <UserX className="w-5 h-5 text-destructive" />
+                  <div>
+                    <span className="text-sm">Cancelled By:</span>
+                    <p className="font-bold">
+                      {booking.cancelledBy.cancellerName}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-destructive" />
+                  <div>
+                    <span className="text-sm">Role:</span>
+                    <p className="font-semibold capitalize">
+                      {booking.cancelledBy.cancellerRole}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           {["Upcoming", "Awaiting Substitute"].includes(booking.status) && (
             <Card>
               <CardHeader>
@@ -226,11 +264,19 @@ export default function AdminBookingDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Update Booking Status</CardTitle>
+              {/* ✅ NAYA CODE: Agar status cancelled hai toh message dikhayein */}
+              {booking.status === "Cancelled" && (
+                <CardDescription className="pt-2 text-destructive">
+                  This booking is cancelled and its status cannot be changed.
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent className="flex items-center gap-4">
               <Select
                 value={newStatus}
                 onValueChange={(value) => setNewStatus(value as BookingStatus)}
+                // ✅ NAYA CODE: Status cancelled hone par select ko disable karein
+                disabled={booking.status === "Cancelled"}
               >
                 <SelectTrigger className="w-[220px]">
                   <SelectValue placeholder="Select status" />
@@ -246,7 +292,12 @@ export default function AdminBookingDetailPage() {
               </Select>
               <Button
                 onClick={handleStatusUpdate}
-                disabled={newStatus === booking.status || bookingLoading}
+                // ✅ NAYA CODE: Button ko bhi disable karein agar status cancelled hai
+                disabled={
+                  newStatus === booking.status ||
+                  bookingLoading ||
+                  booking.status === "Cancelled"
+                }
               >
                 <Edit className="w-4 h-4 mr-2" /> Update Status
               </Button>
