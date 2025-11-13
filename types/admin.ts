@@ -99,6 +99,7 @@ export interface AddOn {
     locations: string[]; // Array of location names or IDs
     images: string[];
     isActive: boolean;
+    isFeatured: boolean; 
     averageRating?: number; // Optional, likely calculated by backend
     numReviews?: number;    // Optional, likely calculated by backend
   }

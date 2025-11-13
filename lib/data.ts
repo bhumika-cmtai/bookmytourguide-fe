@@ -90,6 +90,7 @@ export interface Booking {
   totalPrice: number;
   advanceAmount: number;
   remainingAmount: number;
+  isFeatured: boolean;
   paymentId: string;
   status: "Upcoming" | "Completed" | "Cancelled";
   cancelledBy?: CancellationDetails | null;
