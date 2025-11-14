@@ -189,9 +189,9 @@ const GuideProfilePage = () => {
               <Label htmlFor="experience">Experience (e.g., 5 years)</Label>
               <Input id="experience" name="experience" value={formData.experience} onChange={handleInputChange} />
             </div>
-            <div>
+            <div className="bg-white z-50">
               <Label>Languages</Label>
-              <MultiSelect options={languageOptions} selected={selectedLanguages} onChange={setSelectedLanguages} placeholder="Select languages..."/>
+              <MultiSelect className="bg-white" options={languageOptions} selected={selectedLanguages} onChange={setSelectedLanguages} placeholder="Select languages..."/>
             </div>
             <div>
                 <Label>Service Locations</Label>

@@ -148,7 +148,6 @@ export function Header() {
           </nav>
 
           <div className="hidden lg:flex items-center space-x-4">
-            {/* --- CART REMOVED FROM HERE --- */}
             <div className="relative">
               <select
                 value={language}
@@ -290,7 +289,6 @@ export function Header() {
           </button>
         </div>
 
-        {/* --- MOBILE MENU ADDED HERE --- */}
         {isMenuOpen && (
           <div className="lg:hidden py-4 border-t border-gray-200/50 bg-white/95 backdrop-blur-md animate-in fade-in-0 slide-in-from-top-2 duration-300">
             <div className="flex flex-col space-y-4">

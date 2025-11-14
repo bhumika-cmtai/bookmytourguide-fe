@@ -164,7 +164,7 @@ export function TourCategories() {
                         {t("per_person")}
                       </div>
                     </div>
-                    <button
+                    {/* <button
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 px-4 rounded-lg font-semibold mb-2 transition-all"
                       onClick={() => {
                         console.log("Add to cart clicked for:", pkg.title);
@@ -174,7 +174,7 @@ export function TourCategories() {
                       }}
                     >
                       {t("add_to_cart")}
-                    </button>
+                    </button> */}
                     <Button
                       asChild
                       className="w-full bg-primary hover:bg-primary/80 text-primary-foreground"
