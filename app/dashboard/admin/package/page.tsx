@@ -198,7 +198,7 @@ export default function PackagesAdminPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button variant="outline" size="sm" onClick={() => handleEdit(pkg)}><Edit className="w-4 h-4 mr-1"/>Edit</Button>
-                        <Button variant="destructive" size="sm" onClick={() => { setPackageToDelete(pkg._id); setIsAlertOpen(true); }}><Trash2 className="w-4 h-4 mr-1"/>Delete</Button>
+                        <Button className='bg-red-600' variant="destructive" size="sm" onClick={() => { setPackageToDelete(pkg._id); setIsAlertOpen(true); }}><Trash2 className="w-4 h-4 mr-1"/>Delete</Button>
                       </div>
                     </td>
                   </tr>
@@ -242,7 +242,7 @@ export default function PackagesAdminPage() {
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone and will permanently delete the package.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Yes, delete it</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-500/90">Yes, delete it</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

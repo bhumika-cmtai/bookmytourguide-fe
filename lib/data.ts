@@ -350,3 +350,32 @@ export interface tourGuideBooking {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Blog {
+  _id?: string;
+  title: string;
+  slug: string;
+  content: string;
+  author?: {
+    _id: string;
+    name: string;
+  };
+  thumbnail?: string; // S3 URL
+  tags: string[];
+  published: boolean;
+  publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * The structure of the API response for a list of blogs.
+ * This matches the `ApiResponse` type from your service, with `data` being an array of blogs.
+ */
+export interface BlogListResponse {
+  success: boolean;
+  message: string;
+  data: Blog[];
+  totalPages: number;
+  currentPage: number;
+}

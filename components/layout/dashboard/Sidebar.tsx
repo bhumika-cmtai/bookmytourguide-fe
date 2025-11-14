@@ -25,6 +25,7 @@ import {
   PersonStanding,
   Languages,
   Podcast,
+  Book
 } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
 
@@ -36,6 +37,7 @@ const adminNavigation = [
   { name: "Languages", href: "/dashboard/admin/languages", icon: Languages },
   { name: "User", href: "/dashboard/admin/users", icon: User },
   { name: "Guide", href: "/dashboard/admin/guides", icon: Users },
+  { name: "Blogs", href: "/dashboard/admin/blog", icon: Book },
   {
     name: "Subscription",
     href: "/dashboard/admin/subscriptions",

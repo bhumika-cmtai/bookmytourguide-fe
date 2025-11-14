@@ -72,7 +72,7 @@ const DashboardSkeleton = () => (
 // It now receives profileStatus as a prop.
 const SubscriptionStatus = ({ profileStatus }: { profileStatus: any }) => {
     // The check is now simpler because we know profileStatus exists.
-    if (!profileStatus.profileComplete || !profileStatus.isApproved) {
+    if (!profileStatus.profileComplete ) {
         return null;
     }
 
