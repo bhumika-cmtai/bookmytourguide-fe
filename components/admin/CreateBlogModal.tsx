@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, FormEvent } from 'react';
+import { useState, useMemo, FormEvent, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,11 +16,24 @@ import { Loader2, Upload } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 
-interface CreateBlogModalProps {
+// Assuming a Blog type is available, e.g., from '@/lib/data'
+interface Blog {
+  _id: string;
+  title: string;
+  slug: string;
+  content: string;
+  thumbnail?: string;
+  tags?: string[];
+  published?: boolean;
+  publishedAt?: string;
+}
+
+interface BlogFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (formData: FormData) => void;
   isLoading?: boolean;
+  initialData?: Blog | null; // Used for editing
 }
 
 // Helper function to create a URL-friendly slug from the title
@@ -34,8 +47,18 @@ const slugify = (text: string): string => {
     .replace(/\-\-+/g, '-');     // Replace multiple - with single -
 };
 
-export function CreateBlogModal({ isOpen, onClose, onSubmit, isLoading = false }: CreateBlogModalProps) {
+export function BlogFormModal({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  isLoading = false, 
+  initialData = null 
+}: BlogFormModalProps) {
+  
+  const isEditMode = !!initialData;
+
   const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
   const [published, setPublished] = useState(false);
@@ -43,9 +66,37 @@ export function CreateBlogModal({ isOpen, onClose, onSubmit, isLoading = false }
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const ReactQuill = useMemo(() => dynamic(() => import('react-quill'), { ssr: false }), []);
+  
+  // Effect to populate form when in edit mode or reset when in create mode
+  useEffect(() => {
+    if (isOpen) {
+      if (isEditMode && initialData) {
+        setTitle(initialData.title);
+        setSlug(initialData.slug);
+        setContent(initialData.content || '');
+        setTags(initialData.tags?.join(', ') || '');
+        setPublished(initialData.published || false);
+        setImagePreview(initialData.thumbnail || null);
+        setThumbnail(null); // Clear file input
+      } else {
+        // Reset form for create mode
+        setTitle('');
+        setSlug('');
+        setContent('');
+        setTags('');
+        setPublished(false);
+        setThumbnail(null);
+        setImagePreview(null);
+      }
+    }
+  }, [isOpen, initialData, isEditMode]);
 
-  // Auto-generate slug from title
-  const slug = useMemo(() => slugify(title), [title]);
+  // Effect to auto-generate slug from title ONLY in create mode
+  useEffect(() => {
+    if (!isEditMode) {
+      setSlug(slugify(title));
+    }
+  }, [title, isEditMode]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,65 +113,51 @@ export function CreateBlogModal({ isOpen, onClose, onSubmit, isLoading = false }
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
-    // Basic validation
-    if (!title.trim()) {
-      alert('Please enter a title');
+    if (!title.trim() || !content.trim()) {
+      alert('Title and Content are required.');
       return;
     }
     
-    if (!content.trim()) {
-      alert('Please enter content');
-      return;
-    }
-    
-    if (!thumbnail) {
+    // Thumbnail is required for new posts, but not when editing an existing one
+    if (!isEditMode && !thumbnail) {
       alert('Please upload a thumbnail image');
       return;
     }
 
     const formData = new FormData();
     formData.append('title', title.trim());
-    formData.append('content', content);
     formData.append('slug', slug);
+    formData.append('content', content);
     
-    // Convert tags from comma-separated string to array
-    const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+    const tagsArray = tags.split(',').map(tag => tag.trim()).filter(Boolean);
     formData.append('tags', JSON.stringify(tagsArray));
     
-    formData.append('published', published.toString());
+    formData.append('published', String(published));
     
-    // ✅ Field name must match backend: "thumbnail"
-    formData.append('thumbnail', thumbnail);
+    // Only append the thumbnail if a new file has been selected.
+    // The backend will keep the old one if this field is omitted on update.
+    if (thumbnail) {
+      formData.append('thumbnail', thumbnail);
+    }
     
-    // Call the parent's submit handler
     onSubmit(formData);
   };
 
-  const resetForm = () => {
-    setTitle('');
-    setContent('');
-    setTags('');
-    setPublished(false);
-    setThumbnail(null);
-    setImagePreview(null);
-  };
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-3xl flex flex-col max-h-[95vh]">
         <DialogHeader>
-          <DialogTitle>Create a New Blog Post</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Blog Post' : 'Create a New Blog Post'}</DialogTitle>
           <DialogDescription>
-            Fill in the details below to publish a new article. Click "Create Post" when finished.
+            {isEditMode 
+              ? 'Update the details for this article. Click "Save Changes" when finished.'
+              : 'Fill in the details below to publish a new article. Click "Create Post" when finished.'
+            }
           </DialogDescription>
         </DialogHeader>
         
         <form id="blog-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto grid gap-6 p-6">
+          {/* Title Input */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="title" className="text-right">
               Title <span className="text-red-500">*</span>
@@ -135,17 +172,20 @@ export function CreateBlogModal({ isOpen, onClose, onSubmit, isLoading = false }
             />
           </div>
 
+          {/* Slug Input (Disabled) */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="slug" className="text-right">Slug</Label>
             <Input
               id="slug"
               value={slug}
+              onChange={(e) => setSlug(slugify(e.target.value))} // Allow manual editing if needed, still slugified
               className="col-span-3 bg-gray-50"
               placeholder="Auto-generated from title"
-              disabled
+              required
             />
           </div>
 
+          {/* Tags Input */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="tags" className="text-right">Tags</Label>
             <Input
@@ -153,10 +193,11 @@ export function CreateBlogModal({ isOpen, onClose, onSubmit, isLoading = false }
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               className="col-span-3"
-              placeholder="e.g., Travel, Tips, Destinations (comma-separated)"
+              placeholder="e.g., Travel, Tips, Destinations"
             />
           </div>
 
+          {/* Published Checkbox */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="published" className="text-right">Status</Label>
             <div className="col-span-3 flex items-center gap-2">
@@ -167,43 +208,29 @@ export function CreateBlogModal({ isOpen, onClose, onSubmit, isLoading = false }
                 onChange={(e) => setPublished(e.target.checked)}
                 className="w-4 h-4"
               />
-              <Label htmlFor="published" className="cursor-pointer">
-                Publish immediately
-              </Label>
+              <Label htmlFor="published" className="cursor-pointer">Publish immediately</Label>
             </div>
           </div>
 
+          {/* Thumbnail Upload */}
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="thumbnail-image" className="text-right pt-2">
-              Thumbnail <span className="text-red-500">*</span>
+              Thumbnail {!isEditMode && <span className="text-red-500">*</span>}
             </Label>
             <div className="col-span-3">
-              <Input 
-                id="thumbnail-image" 
-                type="file" 
-                accept="image/*" 
-                onChange={handleImageChange} 
-                className="hidden" 
-              />
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => document.getElementById('thumbnail-image')?.click()}
-              >
-                <Upload className="w-4 h-4 mr-2"/> Upload Image
+              <Input id="thumbnail-image" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+              <Button type="button" variant="outline" onClick={() => document.getElementById('thumbnail-image')?.click()}>
+                <Upload className="w-4 h-4 mr-2"/> {imagePreview ? 'Change Image' : 'Upload Image'}
               </Button>
               {imagePreview && (
                 <div className="mt-4 border rounded-md p-2">
-                  <img 
-                    src={imagePreview} 
-                    alt="Thumbnail preview" 
-                    className="rounded-md max-h-48 w-auto object-cover"
-                  />
+                  <img src={imagePreview} alt="Thumbnail preview" className="rounded-md max-h-48 w-auto object-cover"/>
                 </div>
               )}
             </div>
           </div>
           
+          {/* Content Editor */}
           <div className="grid grid-cols-1 gap-2">
             <Label htmlFor="content" className="mb-2">
               Content <span className="text-red-500">*</span>
@@ -221,12 +248,12 @@ export function CreateBlogModal({ isOpen, onClose, onSubmit, isLoading = false }
         </form>
         
         <DialogFooter className="border-t pt-4">
-          <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
+          <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button type="submit" form="blog-form" disabled={isLoading} className="red-gradient">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create Post
+            {isEditMode ? 'Save Changes' : 'Create Post'}
           </Button>
         </DialogFooter>
       </DialogContent>

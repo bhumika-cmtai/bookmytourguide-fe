@@ -21,6 +21,7 @@ import { fetchPackageById, fetchRecommendedPackages } from "@/lib/redux/thunks/a
 
 // ✅ Import the new slider component
 import { RecommendedPackagesSlider } from "@/components/RecommendedPackagesSlider";
+import { TourImageGallery } from "@/components/ui/TourImageGallery";
 
 // Skeleton Component for Loading State
 const TourDetailSkeleton = () => (
@@ -167,48 +168,9 @@ export default function TourDetailPage({ params }: { params: { id: string } }) {
         </div>
 
         {/* Image Gallery */}
-        <div className="grid grid-cols-4 grid-rows-2 gap-4 mb-12 h-[60vh] animate-scale-in">
-          <div className="col-span-4 md:col-span-2 row-span-2 relative rounded-xl overflow-hidden shadow-lg">
-            <Image
-              src={tour.images[0] || "/placeholder.svg"}
-              alt={tour.title}
-              fill
-              className="object-cover"
-            />
-          </div>
-          <div className="hidden md:block relative rounded-xl overflow-hidden shadow-lg">
-            <Image
-              src={tour.images[1] || tour.images[0] || "/placeholder.svg"}
-              alt={`${tour.title} image 2`}
-              fill
-              className="object-cover"
-            />
-          </div>
-          <div className="hidden md:block relative rounded-xl overflow-hidden shadow-lg">
-            <Image
-              src={tour.images[2] || tour.images[0] || "/placeholder.svg"}
-              alt={`${tour.title} image 3`}
-              fill
-              className="object-cover"
-            />
-          </div>
-          <div className="hidden md:block relative rounded-xl overflow-hidden shadow-lg">
-            <Image
-              src={tour.images[3] || tour.images[0] || "/placeholder.svg"}
-              alt={`${tour.title} image 4`}
-              fill
-              className="object-cover"
-            />
-          </div>
-          <div className="hidden md:block relative rounded-xl overflow-hidden shadow-lg">
-            <Image
-              src={tour.images[4] || tour.images[0] || "/placeholder.svg"}
-              alt={`${tour.title} image 5`}
-              fill
-              className="object-cover"
-            />
-          </div>
-        </div>
+        <div className="my-8">
+        <TourImageGallery images={tour.images} title={tour.title} />
+      </div>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-12">
@@ -321,12 +283,12 @@ export default function TourDetailPage({ params }: { params: { id: string } }) {
                 Find Available Guides
               </Button>
 
-              {range?.from && range.to && (
+              {/* {range?.from && range.to && (
                 <p className="text-center mt-3 text-sm text-green-600">
                   Selected: {range.from.toLocaleDateString()} -{" "}
                   {range.to.toLocaleDateString()}
                 </p>
-              )}
+              )} */}
             </div>
           </aside>
         </div>

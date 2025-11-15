@@ -69,27 +69,11 @@ const guideNavigation = [
   { name: "Dashboard", href: "/dashboard/guide", icon: LayoutGrid },
   { name: "Edit Profile", href: "/dashboard/guide/profile", icon: UserCircle },
   { name: "Tour Guide Booking", href: "/dashboard/guide/tourguide-booking", icon: Bus },
-  { name: "Current Tours", href: "/dashboard/guide/current-tours", icon: Bus },
-  {
-    name: "Upcoming Tours",
-    href: "/dashboard/guide/upcoming-tours",
-    icon: Binoculars,
-  },
-  {
-    name: "Previous Tours",
-    href: "/dashboard/guide/previous-tours",
-    icon: BusFront,
-  },
   // --- YEH LINE THEEK KI GAYI HAI ---
   {
-    name: "All My Bookings",
+    name: "All Service Bookings",
     href: "/dashboard/guide/all-bookings",
     icon: BookOpen,
-  },
-  {
-    name: "Substitute Tours",
-    href: "/dashboard/guide/substitute-tours",
-    icon: UserRoundPlus,
   },
   {
     name: "Set Availability",

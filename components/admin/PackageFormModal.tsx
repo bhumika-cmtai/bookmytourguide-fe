@@ -1,3 +1,4 @@
+// src/components/admin/PackageFormModal.tsx
 "use client";
 import React, { useState, useEffect, FormEvent, useRef } from 'react';
 import { AdminPackage, AdminLocation } from '@/types/admin';
@@ -17,7 +18,7 @@ interface PackageFormData {
   price: number;
   basePrice: number;
   duration: string;
-  locations: string[];
+  locations: string[]; // This will now store placeName strings
   images: (File | string)[];
   isActive: boolean;
   isFeatured: boolean; 
@@ -66,7 +67,7 @@ export function PackageFormModal({
         duration: editingPackage.duration,
         isActive: editingPackage.isActive,
         isFeatured: editingPackage.isFeatured || false,
-        locations: editingPackage.locations || [],
+        locations: editingPackage.locations || [], // This is already an array of names, which is correct
         images: editingPackage.images || [],
       });
     } else {
@@ -92,6 +93,7 @@ export function PackageFormModal({
     e.preventDefault();
     const formDataToSend = new FormData();
     
+    // Append all form data as before
     formDataToSend.append('title', formData.title);
     formDataToSend.append('description', formData.description);
     formDataToSend.append('price', formData.price.toString());
@@ -100,8 +102,9 @@ export function PackageFormModal({
     formDataToSend.append('isActive', formData.isActive.toString());
     formDataToSend.append('isFeatured', formData.isFeatured.toString());
     
-    formData.locations.forEach(locId => {
-      formDataToSend.append('locations', locId);
+    // Now this correctly appends the location NAMES
+    formData.locations.forEach(locName => {
+      formDataToSend.append('locations', locName);
     });
     
     const newImageFiles = formData.images.filter(img => img instanceof File) as File[];
@@ -119,20 +122,22 @@ export function PackageFormModal({
     
     await onSave(formDataToSend);
   };
-
-  const handleSelectLocation = (locationId: string) => {
+  
+  // <-- FIX #1: This function now works with the location NAME (string)
+  const handleSelectLocation = (locationName: string) => {
     setFormData((prev) => {
-        const newLocations = prev.locations.includes(locationId)
-            ? prev.locations.filter((id) => id !== locationId)
-            : [...prev.locations, locationId];
+        const newLocations = prev.locations.includes(locationName)
+            ? prev.locations.filter((name) => name !== locationName)
+            : [...prev.locations, locationName];
         return { ...prev, locations: newLocations };
     });
   };
 
-  const removeLocation = (locationId: string) => {
+  // <-- FIX #2: This function now removes by NAME (string)
+  const removeLocation = (locationName: string) => {
     setFormData(prev => ({ 
       ...prev, 
-      locations: prev.locations.filter(id => id !== locationId) 
+      locations: prev.locations.filter(name => name !== locationName) 
     }));
   };
   
@@ -146,14 +151,13 @@ export function PackageFormModal({
     setFormData(prev => ({ ...prev, images: prev.images.filter((_, index) => index !== indexToRemove) }));
   };
 
-  // Filter locations based on search term
   const filteredLocations = allLocations.filter(location =>
     location.placeName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Get selected location objects for displaying badges
+  // <-- FIX #3: Get selected location objects by matching their placeName
   const selectedLocations = allLocations.filter(loc => 
-    formData.locations.includes(loc._id)
+    formData.locations.includes(loc.placeName)
   );
   
   if (!isOpen) return null;
@@ -167,64 +171,32 @@ export function PackageFormModal({
         </CardHeader>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <CardContent className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
+            {/* ... other form fields are unchanged ... */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="title">Title *</Label>
-                <Input 
-                  id="title" 
-                  required 
-                  value={formData.title} 
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
-                />
+                <Input id="title" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="duration">Duration *</Label>
-                <Input 
-                  id="duration" 
-                  required 
-                  placeholder="e.g., 7 Days" 
-                  value={formData.duration} 
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })} 
-                />
+                <Input id="duration" required placeholder="e.g., 7 Days" value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: e.target.value })} />
               </div>
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="description">Description *</Label>
-              <Textarea 
-                id="description" 
-                required 
-                rows={4} 
-                value={formData.description} 
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
-              />
+              <Textarea id="description" required rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
             </div>
-
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="price">Price (₹) *</Label>
-                <Input 
-                  id="price" 
-                  type="number" 
-                  required 
-                  min="0" 
-                  value={formData.price} 
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} 
-                />
+                <Input id="price" type="number" required min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="basePrice">Base Price (₹) *</Label>
-                <Input 
-                  id="basePrice" 
-                  type="number" 
-                  required 
-                  min="0" 
-                  value={formData.basePrice} 
-                  onChange={(e) => setFormData({ ...formData, basePrice: parseFloat(e.target.value) || 0 })} 
-                />
+                <Input id="basePrice" type="number" required min="0" value={formData.basePrice} onChange={(e) => setFormData({ ...formData, basePrice: parseFloat(e.target.value) || 0 })} />
               </div>
             </div>
-            
+
             {/* Location Multi-Select Dropdown */}
             <div className="space-y-2">
               <Label className="font-semibold">Locations *</Label>
@@ -232,55 +204,32 @@ export function PackageFormModal({
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-4 py-2 border rounded-md bg-background hover:bg-accent transition-colors",
-                    isDropdownOpen && "ring-2 ring-ring"
-                  )}
+                  className={cn("w-full flex items-center justify-between px-4 py-2 border rounded-md bg-background hover:bg-accent transition-colors", isDropdownOpen && "ring-2 ring-ring")}
                 >
-                  <span className="text-sm text-muted-foreground">
-                    {formData.locations.length === 0 
-                      ? 'Select locations...' 
-                      : `${formData.locations.length} location${formData.locations.length > 1 ? 's' : ''} selected`
-                    }
-                  </span>
-                  <ChevronDown className={cn(
-                    "w-4 h-4 transition-transform",
-                    isDropdownOpen && "transform rotate-180"
-                  )} />
+                  <span className="text-sm text-muted-foreground">{formData.locations.length === 0 ? 'Select locations...' : `${formData.locations.length} location${formData.locations.length > 1 ? 's' : ''} selected`}</span>
+                  <ChevronDown className={cn("w-4 h-4 transition-transform", isDropdownOpen && "transform rotate-180")} />
                 </button>
 
                 {isDropdownOpen && (
                   <div className="absolute z-50 w-full mt-2 bg-popover border rounded-md shadow-lg">
                     <div className="p-2 border-b">
-                      <Input
-                        type="text"
-                        placeholder="Search locations..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="h-8"
-                      />
+                      <Input type="text" placeholder="Search locations..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-8"/>
                     </div>
                     <div className="max-h-[200px] overflow-y-auto p-2">
                       {filteredLocations.length === 0 ? (
-                        <div className="text-sm text-muted-foreground text-center py-4">
-                          No locations found
-                        </div>
+                        <div className="text-sm text-muted-foreground text-center py-4">No locations found</div>
                       ) : (
                         filteredLocations.map((location) => {
-                          const isSelected = formData.locations.includes(location._id);
+                          // <-- FIX #4: Check if the placeName is in the locations array
+                          const isSelected = formData.locations.includes(location.placeName);
                           return (
                             <div
                               key={location._id}
-                              onClick={() => handleSelectLocation(location._id)}
-                              className={cn(
-                                "flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors",
-                                isSelected ? "bg-accent" : "hover:bg-accent/50"
-                              )}
+                              // <-- FIX #5: Pass the placeName to the handler
+                              onClick={() => handleSelectLocation(location.placeName)}
+                              className={cn("flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors", isSelected ? "bg-accent" : "hover:bg-accent/50")}
                             >
-                              <div className={cn(
-                                "w-4 h-4 border rounded flex items-center justify-center flex-shrink-0",
-                                isSelected && "bg-primary border-primary"
-                              )}>
+                              <div className={cn("w-4 h-4 border rounded flex items-center justify-center flex-shrink-0", isSelected && "bg-primary border-primary")}>
                                 {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
                               </div>
                               <span className="text-sm flex-1">{location.placeName}</span>
@@ -293,19 +242,15 @@ export function PackageFormModal({
                 )}
               </div>
 
-              {/* Selected Locations Display */}
               {selectedLocations.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3 p-3 bg-muted/50 rounded-md">
                   {selectedLocations.map(loc => (
-                    <Badge 
-                      key={loc._id} 
-                      variant="secondary"
-                      className="pl-3 pr-1 py-1 flex items-center gap-1"
-                    >
+                    <Badge key={loc._id} variant="secondary" className="pl-3 pr-1 py-1 flex items-center gap-1">
                       {loc.placeName}
                       <button
                         type="button"
-                        onClick={() => removeLocation(loc._id)}
+                        // <-- FIX #6: Remove by placeName
+                        onClick={() => removeLocation(loc.placeName)}
                         className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
                       >
                         <X className="w-3 h-3" />
@@ -316,53 +261,30 @@ export function PackageFormModal({
               )}
             </div>
             
-            {/* Image Upload & Preview */}
+            {/* Image Upload & Preview (Unchanged) */}
             <div className="space-y-3 p-4 border rounded-lg">
               <Label className="font-semibold">Images</Label>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                 {formData.images.map((img, index) => (
                   <div key={index} className="relative group aspect-square">
-                    <img 
-                      src={typeof img === 'string' ? img : URL.createObjectURL(img)} 
-                      alt={`Package preview ${index + 1}`} 
-                      className="w-full h-full object-cover rounded-md" 
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => removeImage(index)} 
-                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
+                    <img src={typeof img === 'string' ? img : URL.createObjectURL(img)} alt={`Package preview ${index + 1}`} className="w-full h-full object-cover rounded-md" />
+                    <button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <X className="w-3 h-3" />
                     </button>
                   </div>
                 ))}
               </div>
-              <Input 
-                id="images" 
-                type="file" 
-                multiple 
-                accept="image/*" 
-                onChange={handleImageChange} 
-                className="mt-2" 
-              />
+              <Input id="images" type="file" multiple accept="image/*" onChange={handleImageChange} className="mt-2" />
             </div>
             
-            {/* Checkboxes */}
+            {/* Checkboxes (Unchanged) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
               <div className="flex items-center gap-3 p-3 border rounded-md">
-                <Checkbox 
-                  id="isActive" 
-                  checked={formData.isActive} 
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: !!checked })} 
-                />
+                <Checkbox id="isActive" checked={formData.isActive} onCheckedChange={(checked) => setFormData({ ...formData, isActive: !!checked })} />
                 <Label htmlFor="isActive" className="cursor-pointer">Make package active</Label>
               </div>
               <div className="flex items-center gap-3 p-3 border rounded-md">
-                <Checkbox 
-                  id="isFeatured" 
-                  checked={formData.isFeatured} 
-                  onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: !!checked })} 
-                />
+                <Checkbox id="isFeatured" checked={formData.isFeatured} onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: !!checked })} />
                 <Label htmlFor="isFeatured" className="cursor-pointer">Mark as "Featured"</Label>
               </div>
             </div>

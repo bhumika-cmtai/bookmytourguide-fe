@@ -77,10 +77,6 @@ export const createBlog = createAsyncThunk<Blog, FormData>(
 );
 
 
-/**
- * Updates an existing blog post. Expects `FormData` for file uploads.
- * The thunk is typed to return the updated `Blog` object.
- */
 export const updateBlog = createAsyncThunk<Blog, { id: string; data: FormData }>(
   'blogs/update',
   async ({ id, data }, { rejectWithValue }) => {
@@ -97,14 +93,12 @@ export const updateBlog = createAsyncThunk<Blog, { id: string; data: FormData }>
 
 /**
  * Deletes a blog post by its ID.
- * The thunk is typed to return the `string` ID of the deleted blog.
  */
 export const deleteBlog = createAsyncThunk<string, string>(
   'blogs/delete',
   async (blogId, { rejectWithValue }) => {
     try {
       await apiService.delete(`${RESOURCE_PATH}/${blogId}`);
-      // Return the ID on success so the slice can filter it out.
       return blogId;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Failed to delete blog post');

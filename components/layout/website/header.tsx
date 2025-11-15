@@ -49,6 +49,7 @@ export function Header() {
     { href: "/guides", labelKey: "nav_become_guide", icon: Users },
     { href: "/how-it-works", labelKey: "nav_how_it_works", icon: HelpCircle },
     { href: "/contact", labelKey: "nav_contact", icon: Mail },
+    { href: "/blogs", labelKey: "nav_blog", icon: Mail },
   ];
 
   useEffect(() => {

@@ -5,13 +5,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AppDispatch, RootState } from '@/lib/store';
-// ✅ Corrected Path: Make sure your thunk and type paths are correct
-import { fetchBlogs, createBlog } from '@/lib/redux/thunks/blog/blogThunks'; 
-import { Blog } from '@/lib/data';
+// ✅ Import all necessary thunks for full functionality
+import { fetchBlogs, createBlog, updateBlog, deleteBlog } from '@/lib/redux/thunks/blog/blogThunks'; 
+import { Blog } from '@/lib/data'; // Make sure this type matches the one in your modal
 import { toast } from 'react-toastify';
 
-// Import your modal component
-import { CreateBlogModal } from '@/components/admin/CreateBlogModal'; // Adjust path if needed
+// ✅ Import your updated modal
+import { BlogFormModal } from '@/components/admin/CreateBlogModal'; 
 
 // --- UI Components ---
 import { Button } from '@/components/ui/button';
@@ -19,9 +19,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlusCircle, FilePenLine, Trash2, ExternalLink, Plus } from 'lucide-react';
+import { Plus, FilePenLine, Trash2, ExternalLink } from 'lucide-react';
 
-
+// Skeleton Loader Component (no changes needed)
 const TableSkeleton = () => (
   <div className="space-y-3 mt-4">
     {[...Array(5)].map((_, i) => (
@@ -34,34 +34,77 @@ const TableSkeleton = () => (
   </div>
 );
 
-
 export default function ManageBlogsPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { blogs, loading, error, currentPage, totalPages } = useSelector((state: RootState) => state.blogs);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // State for modal's loading spinner
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // ✅ State to hold the blog being edited, determining the modal's mode
+  const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
 
   useEffect(() => {
+    // Fetch initial blogs when component mounts
     dispatch(fetchBlogs({ page: 1, limit: 10 }));
   }, [dispatch]);
 
-  // --- ✅ IMPLEMENTED: Function to handle blog creation ---
-  const handleCreateBlog = async (formData: FormData) => {
+  // --- MODAL AND STATE HANDLERS ---
+  const handleOpenCreateModal = () => {
+    setEditingBlog(null); // Clear any editing data
+    setIsModalOpen(true);
+  };
+  
+  const handleOpenEditModal = (blog: Blog) => {
+    setEditingBlog(blog); // Set the blog to be edited
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingBlog(null); // Always clear editing state on close
+  };
+
+  // --- MAIN CRUD LOGIC ---
+
+  /**
+   * This single function handles both creating and updating a blog post.
+   * It checks if `editingBlog` has data to decide which thunk to dispatch.
+   */
+  const handleFormSubmit = async (formData: FormData) => {
     setIsSubmitting(true);
     try {
-      // Dispatch the thunk and use .unwrap() to handle success/failure
-      await dispatch(createBlog(formData)).unwrap();
-      toast.success("Blog post created successfully!");
-      setIsModalOpen(false); // Close modal on success
+      if (editingBlog) {
+        // --- UPDATE LOGIC ---
+        await dispatch(updateBlog({ id: editingBlog._id, data: formData })).unwrap();
+        toast.success("Blog post updated successfully!");
+      } else {
+        // --- CREATE LOGIC ---
+        await dispatch(createBlog(formData)).unwrap();
+        toast.success("Blog post created successfully!");
+      }
+      handleCloseModal(); // Close modal on success
     } catch (err: any) {
-      // The thunk's rejectWithValue will be caught here
-      toast.error(err || "Failed to create blog post.");
+      toast.error(err || "An unexpected error occurred.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  /**
+   * This function handles deleting a blog post.
+   */
+  const handleDeleteBlog = async (blogId: string) => {
+    if (window.confirm("Are you sure you want to delete this blog post? This action cannot be undone.")) {
+      try {
+        await dispatch(deleteBlog(blogId)).unwrap();
+        toast.success("Blog deleted successfully!");
+      } catch (err: any) {
+        toast.error(err || "Failed to delete blog post.");
+      }
+    }
+  };
+
+  // --- PAGINATION & UTILITIES ---
   const handlePageChange = (newPage: number) => {
     if (newPage > 0 && newPage <= totalPages) {
       dispatch(fetchBlogs({ page: newPage, limit: 10 }));
@@ -82,7 +125,7 @@ export default function ManageBlogsPage() {
               <CardTitle className="text-2xl">Manage Blogs</CardTitle>
               <CardDescription>View, create, edit, or delete blog posts.</CardDescription>
             </div>
-            <Button className="red-gradient" onClick={() => setIsModalOpen(true)}>
+            <Button className="red-gradient" onClick={handleOpenCreateModal}>
               <Plus className="w-4 h-4 mr-2"/> Add New Blog
             </Button>
           </div>
@@ -100,7 +143,6 @@ export default function ManageBlogsPage() {
               ) : (
                 <div className="border rounded-lg overflow-hidden">
                   <Table>
-                    {/* ... Table Header ... */}
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[80px] hidden sm:table-cell">Image</TableHead>
@@ -121,8 +163,14 @@ export default function ManageBlogsPage() {
                           <TableCell className="hidden md:table-cell">{formatDate(blog.publishedAt)}</TableCell>
                           <TableCell className="text-right space-x-2">
                              <Link href={`/blog/${blog.slug}`} target="_blank"><Button variant="outline" size="icon" title="View Post"><ExternalLink className="h-4 w-4" /></Button></Link>
-                             <Button variant="outline" size="icon" disabled title="Edit"><FilePenLine className="h-4 w-4" /></Button>
-                             <Button variant="destructive" size="icon" disabled title="Delete"><Trash2 className="h-4 w-4" /></Button>
+                             {/* ✅ WORKING EDIT BUTTON */}
+                             <Button variant="outline" size="icon" title="Edit" onClick={() => handleOpenEditModal(blog)}>
+                                <FilePenLine className="h-4 w-4" />
+                             </Button>
+                             {/* ✅ WORKING DELETE BUTTON */}
+                             <Button variant="destructive" size="icon" title="Delete" onClick={() => handleDeleteBlog(blog._id)}>
+                                <Trash2 className="h-4 w-4" />
+                             </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -142,14 +190,14 @@ export default function ManageBlogsPage() {
         </CardContent>
       </Card>
 
-      {/* --- ✅ FIX: Conditionally render the modal --- */}
-      {/* This prevents hydration issues by only mounting the modal when needed */}
+      {/* Conditionally render the modal and pass all required props */}
       {isModalOpen && (
-        <CreateBlogModal
+        <BlogFormModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSubmit={handleCreateBlog}
+          onClose={handleCloseModal}
+          onSubmit={handleFormSubmit}
           isLoading={isSubmitting}
+          initialData={editingBlog} 
         />
       )}
     </div>

@@ -1,4 +1,5 @@
-// components/TourCard.tsx
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -7,26 +8,64 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"; // --- 1. Import Carousel components
 import { MapPin, Clock } from "lucide-react";
-// --- CHANGE #1: Import the correct type for the tour data ---
 import type { AdminPackage } from "@/types/admin";
 
-// --- CHANGE #2: Update the prop type from Tour to AdminPackage ---
 export function TourCard({ tour }: { tour: AdminPackage }) {
-  // A check to prevent division by zero and only show savings if it's a real discount
+  // --- 2. Create an array of unique image URLs ---
+  // The 'Set' automatically removes duplicates. This handles cases where the images array is missing or empty.
+  const uniqueImages = tour.images?.length ? [...new Set(tour.images)] : [];
+
   const showSavings = tour.basePrice && tour.basePrice > tour.price;
 
   return (
-    <Link href={`/tours/${tour._id}`} className="block group">
+    <Link href={`/tours/${tour._id}`} className="block group" prefetch={false}>
       <Card className="overflow-hidden h-full flex flex-col transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-2 border-border/60">
-        <div className="relative h-56 w-full">
-          <Image
-            src={tour.images[0] || "/placeholder.svg"} // Added a fallback image
-            alt={tour.title}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-110"
-          />
+        
+        {/* --- 3. Replace the single Image div with the Carousel --- */}
+        <div className="relative w-full">
+          {uniqueImages.length > 0 ? (
+            <Carousel
+              opts={{
+                loop: uniqueImages.length > 1, // Enable looping only if there's more than one image
+              }}
+              className="w-full"
+            >
+              <CarouselContent>
+                {uniqueImages.map((imageSrc, index) => (
+                  <CarouselItem key={index}>
+                    <div className="aspect-video relative overflow-hidden">
+                      <Image
+                        src={imageSrc || "/placeholder.svg"} // Fallback for null/empty string in array
+                        alt={`${tour.title} - Image ${index + 1}`}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-110"
+                        onError={(e) => {
+                          // In case of an error loading an image, show a placeholder
+                          e.currentTarget.src = '/placeholder.svg';
+                        }}
+                      />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              {/* --- 4. Conditionally render controls only if there is more than one image --- */}
+            </Carousel>
+          ) : (
+            // --- 5. Show a placeholder if no images are available ---
+            <div className="aspect-video bg-muted flex items-center justify-center">
+              <span className="text-sm text-muted-foreground">No Image</span>
+            </div>
+          )}
         </div>
+
         <CardHeader>
           <h3 className="text-xl font-bold text-foreground line-clamp-2">
             {tour.title}
@@ -45,21 +84,17 @@ export function TourCard({ tour }: { tour: AdminPackage }) {
         <CardFooter className="flex justify-between items-center mt-auto pt-4 border-t">
           <div>
             <p className="text-sm text-muted-foreground">From</p>
-            {/* --- CHANGE #3: Use 'price' instead of 'pricePerPerson' --- */}
             <p className="text-2xl font-extrabold text-primary">
               ₹{tour.price.toLocaleString()}
             </p>
           </div>
 
-          {/* Conditionally render the savings block */}
           {showSavings && (
             <div className="text-right">
-              {/* --- CHANGE #4: Use 'basePrice' instead of 'basePricePerPerson' --- */}
               <p className="text-sm text-muted-foreground line-through">
                 ₹{tour.basePrice.toLocaleString()}
               </p>
               <p className="text-sm font-bold text-destructive">
-                {/* --- CHANGE #5: Update calculation with correct property names --- */}
                 Save{" "}
                 {Math.round(
                   ((tour.basePrice - tour.price) / tour.basePrice) * 100
