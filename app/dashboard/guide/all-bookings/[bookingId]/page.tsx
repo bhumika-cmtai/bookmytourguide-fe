@@ -319,14 +319,19 @@ export default function GuideBookingDetailsPage() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full" variant="outline">
-                  <Mail className="w-4 h-4 mr-2" />
-                  Contact Customer
-                </Button>
-                <Button className="w-full" variant="outline">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  View Schedule
-                </Button>
+              {user.mobile ? (
+                  <Button className="w-full" variant="outline" asChild>
+                    <a href={`tel:${user.mobile}`}>
+                      <Phone className="w-4 h-4 mr-2" />
+                      Call Customer
+                    </a>
+                  </Button>
+                ) : (
+                  <Button className="w-full" variant="outline" disabled>
+                    <Phone className="w-4 h-4 mr-2" />
+                    Customer Mobile Not Available
+                  </Button>
+                )}
                 {booking.status === "Upcoming" && (
                   <Button
                     className="w-full"

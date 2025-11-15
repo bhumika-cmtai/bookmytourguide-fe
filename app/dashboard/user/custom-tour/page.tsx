@@ -256,13 +256,13 @@ export default function CustomTourPage() {
                 </div>
 
                 {/* Select Places */}
-                <div className="space-y-2">
+                <div className="space-y-2 bg-white">
                   <Label className="text-lg font-semibold">Select Places</Label>
                   <Popover
                     open={isLocationsOpen}
                     onOpenChange={setLocationsOpen}
                   >
-                    <PopoverTrigger asChild>
+                    <PopoverTrigger className="bg-white" asChild>
                       <button
                         type="button"
                         onClick={() => setLocationsOpen(!isLocationsOpen)}
@@ -332,7 +332,7 @@ export default function CustomTourPage() {
                 </div>
 
                 {/* Language & Travelers */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 bg-white md:grid-cols-2 gap-6">
                   <div>
                     <Label htmlFor="language" className="text-lg font-semibold">
                       Preferred Language

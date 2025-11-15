@@ -99,8 +99,8 @@ function SuccessContent() {
 
             <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
                 <Button asChild size="lg" className="red-gradient">
-                    <Link href={`/bookings/${_id}`}>
-                        View Full Details & Invoice <ArrowRight className="ml-2 w-5 h-5" />
+                    <Link href={`/dashboard/user`}>
+                        Go to Dashboard <ArrowRight className="ml-2 w-5 h-5" />
                     </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">

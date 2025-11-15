@@ -135,13 +135,23 @@ export default function TourDetailPage({ params }: { params: { id: string } }) {
 
   const handleFindGuides = () => {
     if (range?.from && range.to) {
+      // Helper function to format a Date object to a YYYY-MM-DD string
+      // in the local timezone, avoiding the UTC conversion issue.
+      const formatDate = (date: Date) => {
+        const year = date.getFullYear();
+        // getMonth() is zero-based, so we add 1
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      const startDate = formatDate(range.from);
+      const endDate = formatDate(range.to);
+
       const findGuidesHref = `/tours/${
         tour._id
-      }/select-guide?startDate=${
-        range.from.toISOString().split("T")[0]
-      }&endDate=${
-        range.to.toISOString().split("T")[0]
-      }&tourists=${numberOfTourists}`;
+      }/select-guide?startDate=${startDate}&endDate=${endDate}&tourists=${numberOfTourists}`;
+      
       router.push(findGuidesHref);
     }
   };
