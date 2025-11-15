@@ -211,7 +211,7 @@ export function PackageFormModal({
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-2 bg-popover border rounded-md shadow-lg">
+                  <div className="absolute z-50 w-full mt-2 bg-white border rounded-md shadow-lg">
                     <div className="p-2 border-b">
                       <Input type="text" placeholder="Search locations..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-8"/>
                     </div>
