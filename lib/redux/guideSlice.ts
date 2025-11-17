@@ -11,7 +11,8 @@ import {
   updateMyAvailability,
   fetchGuidePricingDetails ,
   adminGetAllGuides,
-  fetchMyBookingsThunk
+  fetchMyBookingsThunk,
+  fetchGuidesForTour
 } from "@/lib/redux/thunks/guide/guideThunk";
 
 const initialState: GuideState = {
@@ -176,7 +177,18 @@ const guideSlice = createSlice({
           state.myProfile = action.payload;
         }
       })
-      .addCase(updateMyAvailability.rejected, setRejected);
+      .addCase(updateMyAvailability.rejected, setRejected)
+      .addCase(fetchGuidesForTour.pending, setPending)
+      .addCase(fetchGuidesForTour.fulfilled, (state, action) => {
+        state.loading = false;
+        state.guides = action.payload.data;
+        state.pagination = {
+          total: action.payload.total,
+          page: action.payload.page,
+          totalPages: action.payload.totalPages,
+        };
+      })
+      .addCase(fetchGuidesForTour.rejected, setRejected);
   },
 });
 

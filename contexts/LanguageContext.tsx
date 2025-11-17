@@ -106,6 +106,10 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           secure_payments: "Secure Payments",
           support_24_7: "24/7 Support",
 
+          footer_quick_links: "Footer Quick Link",
+          footer_contact_details: "Footer Contact Details",
+          footer_payment_methods: "Secure Payment Methods",
+
           // Tour Categories
           explore_tour_categories: "Explore Our Tour Categories",
           explore_tour_categories_desc:
@@ -300,8 +304,16 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           footer_email_placeholder: "Enter your email",
           footer_subscribe: "Subscribe",
           footer_copyright: "© 2024 WanderGuide. All rights reserved.",
-          footer_legal_links:
-            "Privacy Policy | Terms of Service | Cookie Policy",
+          footer_legal_links: "Privacy Policy | Terms of Service | Cookie Policy",
+
+          help_center: "Help Center",
+          safety_guidelines: "Safety Guidelines",
+          privacy_policy: "Privacy Policy",
+          refund_and_cancellation: "Refund and Cancellation",
+          terms_and_conditions: "Terms and Conditions",
+          guide_verification: "Guide Verification",
+          customer_support: "Customer Support",
+
           // ================================= TOURS PAGE =================================
           tours_badge: "Explore Tours",
           tours_title: "Discover India's Hidden Gems",
@@ -586,6 +598,11 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           verified_guides: "Guías Verificados",
           secure_payments: "Pagos Seguros",
           support_24_7: "Soporte 24/7",
+
+          footer_quick_links: "Enlaces Rápidos",
+          footer_contact_details: "Detalles de Contacto",
+          footer_payment_methods: "Métodos de Pago Seguros",
+
           explore_tour_categories: "Explora Nuestras Categorías de Tours",
           explore_tour_categories_desc:
             "Elige entre nuestras experiencias auténticas, dirigidas por expertos locales certificados.",
@@ -678,6 +695,15 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
             "© 2024 WanderGuide. Todos los derechos reservados.",
           footer_legal_links:
             "Política de Privacidad | Términos de Servicio | Política de Cookies",
+
+            help_center: "Centro de Ayuda",
+            safety_guidelines: "Pautas de Seguridad",
+            privacy_policy: "Política de Privacidad",
+            refund_and_cancellation: "Reembolso y Cancelación",
+            terms_and_conditions: "Términos y Condiciones",
+            guide_verification: "Verificación de Guía",
+            customer_support: "Atención al Cliente",
+
           about_platform_title: "Sobre",
           about_platform_p1:
             "IndiaTourManager.com es una plataforma digital unificada que conecta guías turísticos lingüísticos certificados de toda la India con viajeros internacionales.",
@@ -1046,6 +1072,11 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           verified_guides: "Guides Vérifiés",
           secure_payments: "Paiements Sécurisés",
           support_24_7: "Support 24/7",
+
+          footer_quick_links: "Liens Rapides",
+          footer_contact_details: "Coordonnées",
+          footer_payment_methods: "Méthodes de Paiement Sécurisées",
+
           explore_tour_categories: "Découvrez Nos Catégories de Circuits",
           explore_tour_categories_desc:
             "Choisissez parmi nos expériences authentiques, dirigées par des experts locaux certifiés.",
@@ -1128,6 +1159,15 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           footer_copyright: "© 2024 WanderGuide. Tous droits réservés.",
           footer_legal_links:
             "Politique de Confidentialité | Conditions d'Utilisation",
+
+            help_center: "Centre d'Aide",
+            safety_guidelines: "Consignes de Sécurité",
+            privacy_policy: "Politique de Confidentialité",
+            refund_and_cancellation: "Remboursement et Annulation",
+            terms_and_conditions: "Termes et Conditions",
+            guide_verification: "Vérification des Guides",
+            customer_support: "Support Client",
+
           about_platform_title: "À Propos de",
           about_platform_p1:
             "IndiaTourManager.com est une plateforme numérique qui met en relation des guides touristiques linguistiques certifiés de toute l'Inde avec des voyageurs internationaux.",
@@ -1491,6 +1531,11 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           verified_guides: "Проверенные гиды",
           secure_payments: "Безопасные платежи",
           support_24_7: "Поддержка 24/7",
+
+          footer_quick_links: "Быстрые ссылки",
+          footer_contact_details: "Контактная информация",
+          footer_payment_methods: "Безопасные способы оплаты",
+
           explore_tour_categories: "Наши Категории Туров",
           explore_tour_categories_desc:
             "Выберите из наших аутентичных впечатлений, проводимых сертифицированными местными экспертами.",
@@ -1572,6 +1617,15 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           footer_copyright: "© 2024 WanderGuide. Все права защищены.",
           footer_legal_links:
             "Политика конфиденциальности | Условия обслуживания",
+
+            help_center: "Центр помощи",
+            safety_guidelines: "Правила безопасности",
+            privacy_policy: "Политика конфиденциальности",
+            refund_and_cancellation: "Возврат и отмена",
+            terms_and_conditions: "Условия и положения",
+            guide_verification: "Проверка гидов",
+            customer_support: "Поддержка клиентов",
+
           about_platform_title: "О",
           about_platform_p1:
             "IndiaTourManager.com - это единая цифровая платформа, которая связывает сертифицированных лингвистических гидов со всей Индии с международными путешественниками.",
@@ -1925,6 +1979,10 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           verified_guides: "Verifizierte Guides",
           secure_payments: "Sichere Zahlungen",
           support_24_7: "24/7 Support",
+
+          footer_quick_links: "Schnell-Links",
+          footer_contact_details: "Kontaktdaten",    
+          footer_payment_methods: "Sichere Zahlungsmethoden",      
           explore_tour_categories: "Unsere Tour-Kategorien",
           explore_tour_categories_desc:
             "Wählen Sie aus authentischen Erlebnissen, geleitet von zertifizierten lokalen Experten.",
@@ -2004,6 +2062,15 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           footer_subscribe: "Abonnieren",
           footer_copyright: "© 2024 WanderGuide. Alle Rechte vorbehalten.",
           footer_legal_links: "Datenschutz | Nutzungsbedingungen",
+
+          help_center: "Hilfezentrum",
+          safety_guidelines: "Sicherheitsrichtlinien",
+          privacy_policy: "Datenschutzrichtlinie",
+          refund_and_cancellation: "Rückerstattung und Stornierung",
+          terms_and_conditions: "Allgemeine Geschäftsbedingungen",
+          guide_verification: "Guide-Verifizierung",
+          customer_support: "Kundensupport",
+
           about_platform_title: "Über",
           about_platform_p1:
             "IndiaTourManager.com ist eine digitale Plattform, die zertifizierte sprachkundige Reiseführer aus ganz Indien mit internationalen Reisenden verbindet.",

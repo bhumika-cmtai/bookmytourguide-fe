@@ -7,6 +7,26 @@ import { tourGuideBooking } from '@/lib/data';
 const handleError = (err: any) =>
   err.response?.data?.message || err.message || "An error occurred";
 
+
+export const fetchGuidesForTour = createAsyncThunk<
+  { data: GuideProfile[]; total: number; page: number; totalPages: number },
+  { tourId: string; startDate: string; endDate: string; language?: string; page?: number; limit?: number }
+>("guide/fetchGuidesForTour", async (params, { rejectWithValue }) => {
+  try {
+    const response = await apiService.get<{
+      data: GuideProfile[];
+      total: number;
+      page: number;
+      totalPages: number;
+    }>("/api/guides/for-tour", { params });
+    return response;
+  } catch (err: any) {
+    return rejectWithValue(handleError(err));
+  }
+});
+
+
+
 // Get own guide profile
 export const getMyGuideProfile = createAsyncThunk<GuideProfile, void>(
   "guide/getMyProfile",

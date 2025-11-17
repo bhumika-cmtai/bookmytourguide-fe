@@ -412,19 +412,19 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-        <section className="py-16 heritage-gradient text-white">
+        <section className="py-16 heritage-gradient text-red-500">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
               {t("how_cta_title")}
             </h2>
-            <p className="text-xl mb-8 max-w-2xl mx-auto">
+            <p className="text-xl mb-8 max-w-2xl mx-auto text-black">
               {t("how_cta_desc")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/tours" passHref>
                 <Button
                   size="lg"
-                  className="bg-white text-secondary hover:bg-gray-100"
+                  className="bg-white  text-secondary hover:bg-gray-100"
                 >
                   {t("how_cta_button1")}
                 </Button>
@@ -433,7 +433,7 @@ export default function HowItWorksPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-white hover:text-secondary bg-transparent"
+                  className="border-white bg-red-500 text-white hover:bg-red-500 hover:text-secondary"
                 >
                   {t("how_cta_button2")}
                 </Button>
