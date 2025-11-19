@@ -233,7 +233,13 @@ export type AdminAddOn = {
 export type AdminLocation = {
   _id: string;
   placeName: string;
-  pricePerPerson: number;
+  // 🔥 REMOVED: pricePerPerson is no longer used.
+  // pricePerPerson: number;
+  pricing: {
+    smallGroup: { price: number };  // For 1-5 Persons
+    mediumGroup: { price: number }; // For 6-14 Persons
+    largeGroup: { price: number };  // For 15-40 Persons
+  };
   description: string;
   image: string;
 };
@@ -241,7 +247,10 @@ export type AdminLocation = {
 export type LanguageOption = {
   _id: string;
   languageName: string;
-  extraCharge: number;
+  pricing: {
+    standardGroup: { price: number }; // For 1-14 Persons
+    largeGroup: { price: number };    // For 15+ Persons
+  };
 };
 
 export type SubscriptionPlan = {

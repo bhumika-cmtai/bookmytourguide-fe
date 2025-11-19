@@ -18,64 +18,78 @@ interface LocationFormModalProps {
   isLoading: boolean;
 }
 
+const initialPricingState = {
+  smallGroup: { price: 0 },
+  mediumGroup: { price: 0 },
+  largeGroup: { price: 0 },
+};
+
 export function LocationFormModal({ isOpen, onClose, onSave, locationData, isLoading }: LocationFormModalProps) {
   const [placeName, setPlaceName] = useState('');
-  const [description, setDescription] = useState('');
-  const [pricePerPerson, setPricePerPerson] = useState(0);
-  const [imageFile, setImageFile] = useState<File | null>(null); // State specifically for the file
+  const [description, setDescription] = useState('');  
+  const [pricing, setPricing] = useState(initialPricingState);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (locationData) {
       setPlaceName(locationData.placeName);
       setDescription(locationData.description);
-      setPricePerPerson(locationData.pricePerPerson);
-      setImageFile(null); // Reset file input when editing
-      setPreview(locationData.image); // Show existing image from S3 URL
+      // Use optional chaining here as well, just in case of old data
+      setPricing(locationData.pricing ?? initialPricingState); 
+      setImageFile(null);
+      setPreview(locationData.image);
     } else {
       setPlaceName('');
       setDescription('');
-      setPricePerPerson(0);
+      setPricing(initialPricingState);
       setImageFile(null);
       setPreview(null);
     }
-  }, [locationData, isOpen]); // Also reset on isOpen to clear form when reopened
+  }, [locationData, isOpen]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file); // Store the selected file in state
+      setImageFile(file);
       setPreview(URL.createObjectURL(file));
     }
+  };
+
+  const handlePricingChange = (group: 'smallGroup' | 'mediumGroup' | 'largeGroup', value: string) => {
+    setPricing(prev => ({
+      ...prev,
+      [group]: {
+        price: Number(value)
+      }
+    }));
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
-    // If it's a new location, a file must be selected
     if (!locationData && !imageFile) {
-        alert("select an image for the new location.");
+        alert("Please select an image for the new location.");
         return;
     }
     
     const formData = new FormData();
     formData.append('placeName', placeName);
     formData.append('description', description);
-    formData.append('pricePerPerson', pricePerPerson.toString());
+
+    formData.append('pricing[smallGroup][price]', pricing.smallGroup.price.toString());
+    formData.append('pricing[mediumGroup][price]', pricing.mediumGroup.price.toString());
+    formData.append('pricing[largeGroup][price]', pricing.largeGroup.price.toString());
     
-    // ✅ CRITICAL FIX: Only append the image if a new file has been selected.
-    // The backend's 'upload.single("image")' middleware looks for this exact key.
     if (imageFile) {
       formData.append('image', imageFile);
     }
-    console.log("Image file being sent:", formData.get('image'));
-
     
     onSave(formData);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose} >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{locationData ? 'Edit Location' : 'Add New Location'}</DialogTitle>
@@ -83,7 +97,8 @@ export function LocationFormModal({ isOpen, onClose, onSave, locationData, isLoa
             {locationData ? 'Update the details for this location.' : 'Fill in the details for a new location.'}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        {/* ✅ FIX: Added classes to make the form scrollable on smaller screens */}
+        <form onSubmit={handleSubmit} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-6">
           <div>
             <Label htmlFor="placeName">Place Name</Label>
             <Input id="placeName" value={placeName} onChange={(e) => setPlaceName(e.target.value)} required />
@@ -92,9 +107,21 @@ export function LocationFormModal({ isOpen, onClose, onSave, locationData, isLoa
             <Label htmlFor="description">Description</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} required />
           </div>
-          <div>
-            <Label htmlFor="pricePerPerson">Base Price/Person (₹)</Label>
-            <Input id="pricePerPerson" type="number" value={pricePerPerson} onChange={(e) => setPricePerPerson(Number(e.target.value))} required />
+          <div className="space-y-3 rounded-md border p-4">
+            <h4 className="font-semibold">Guide Fee Pricing (₹)</h4>
+            <div>
+              <Label htmlFor="sg-price">For 1-5 Persons</Label>
+              {/* Added a fallback value just in case pricing is not defined */}
+              <Input id="sg-price" type="number" value={pricing?.smallGroup?.price ?? 0} onChange={(e) => handlePricingChange('smallGroup', e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="mg-price">For 6-14 Persons</Label>
+              <Input id="mg-price" type="number" value={pricing?.mediumGroup?.price ?? 0} onChange={(e) => handlePricingChange('mediumGroup', e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="lg-price">For 15-40 Persons</Label>
+              <Input id="lg-price" type="number" value={pricing?.largeGroup?.price ?? 0} onChange={(e) => handlePricingChange('largeGroup', e.target.value)} required />
+            </div>
           </div>
           <div>
             <Label htmlFor="imageFile">{locationData ? "Change Image" : "Image"}</Label>
@@ -106,7 +133,7 @@ export function LocationFormModal({ isOpen, onClose, onSave, locationData, isLoa
               </div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-6">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}

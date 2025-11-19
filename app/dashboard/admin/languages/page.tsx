@@ -2,14 +2,13 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/lib/store'; // Adjust this import to your store's location
+import { useAppDispatch, useAppSelector } from '@/lib/hooks'; // Using custom hooks
 import {
   fetchLanguages,
   addLanguage,
   updateLanguage,
   deleteLanguage,
-} from '@/lib/redux/thunks/admin/languageThunks'; // Adjust import path
+} from '@/lib/redux/thunks/admin/languageThunks';
 import { LanguageOption, CreateLanguageOption } from '@/types/admin';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,24 +31,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-// Assuming you have a toast notification library like react-hot-toast or similar
 import { toast } from 'react-toastify';
 
 export default function AdminLanguagesPage() {
-  const dispatch: AppDispatch = useDispatch();
-  const { languages, loading, error } = useSelector((state: RootState) => state.languages);
+  const dispatch = useAppDispatch();
+  // Ensure your RootState type is correct for this slice
+  const { languages, loading, error } = useAppSelector((state) => state.admin);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [editingLanguage, setEditingLanguage] = useState<LanguageOption | null>(null);
   const [languageToDelete, setLanguageToDelete] = useState<string | null>(null);
 
-  // Fetch languages when the component mounts
   useEffect(() => {
     dispatch(fetchLanguages());
   }, [dispatch]);
 
-  // Display error notifications
   useEffect(() => {
     if (error) {
       toast.error(error);
@@ -67,6 +64,7 @@ export default function AdminLanguagesPage() {
   };
 
   const handleSaveLanguage = (languageToSave: LanguageOption | CreateLanguageOption) => {
+    // The thunks expect a plain object, which formData is.
     const action = '_id' in languageToSave ? updateLanguage(languageToSave as LanguageOption) : addLanguage(languageToSave);
 
     dispatch(action)
@@ -74,11 +72,9 @@ export default function AdminLanguagesPage() {
       .then(() => {
         toast.success(`Language ${'_id' in languageToSave ? 'updated' : 'added'} successfully!`);
         setIsModalOpen(false);
-        setEditingLanguage(null);
       })
       .catch((err) => {
-        // Error is already handled by the slice and useEffect, but you can add specific logic here if needed.
-        console.error("Failed to save language:", err);
+        toast.error(err.message || 'Failed to save language.');
       });
   };
 
@@ -93,12 +89,13 @@ export default function AdminLanguagesPage() {
         .unwrap()
         .then(() => {
           toast.success("Language deleted successfully!");
-          setIsAlertOpen(false);
-          setLanguageToDelete(null);
         })
         .catch((err) => {
-          console.error("Failed to delete language:", err);
+          toast.error(err.message || 'Failed to delete language.');
+        })
+        .finally(() => {
           setIsAlertOpen(false);
+          setLanguageToDelete(null);
         });
     }
   };
@@ -120,7 +117,8 @@ export default function AdminLanguagesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Language Name</TableHead>
-              <TableHead>Extra Charge (per tour)</TableHead>
+              {/* ✅ UPDATED: Header for tiered pricing */}
+              <TableHead>Surcharge (1-14 / 15+ Persons)</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -137,17 +135,25 @@ export default function AdminLanguagesPage() {
               <TableRow key={language._id}>
                 <TableCell className="font-medium">{language.languageName}</TableCell>
                 <TableCell>
-                  {language.extraCharge > 0 ? `₹${language.extraCharge.toLocaleString()}` : 'No extra charge'}
+                  {/* ✅ UPDATED: Display tiered pricing safely with optional chaining */}
+                  <div className="flex flex-col text-sm">
+                    <span>
+                      <strong>₹{(language.pricing?.standardGroup?.price ?? 0).toLocaleString()}</strong>
+                      <span className="text-muted-foreground"> (1-14)</span>
+                    </span>
+                    <span>
+                      <strong>₹{(language.pricing?.largeGroup?.price ?? 0).toLocaleString()}</strong>
+                       <span className="text-muted-foreground"> (15+)</span>
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end items-center gap-2">
                     <Button variant="outline" size="icon" onClick={() => handleOpenModalForEdit(language)}>
                       <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit Language</span>
                     </Button>
                     <Button variant="destructive" size="icon" onClick={() => handleDeleteClick(language._id)}>
                       <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete Language</span>
                     </Button>
                   </div>
                 </TableCell>
@@ -178,7 +184,7 @@ export default function AdminLanguagesPage() {
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={loading}
-              className="bg-[var(--destructive)] hover:bg-[var(--destructive)]/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Yes, delete it'}
             </AlertDialogAction>

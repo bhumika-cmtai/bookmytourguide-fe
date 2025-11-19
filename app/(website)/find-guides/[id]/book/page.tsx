@@ -7,7 +7,7 @@ import { AppDispatch, RootState } from '@/lib/store';
 import { getGuideById, fetchGuidePricingDetails } from '@/lib/redux/thunks/guide/guideThunk';
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"; 
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from 'next/image';
@@ -38,19 +38,85 @@ export default function BookGuidePage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  // --- Data Fetching Logic ---
   useEffect(() => {
     if (guideId) {
-      // We only need to fetch the guide if it's not the correct one already in the store.
       if (!guide || guide._id !== guideId) {
         dispatch(getGuideById(guideId));
       }
-      // Always fetch pricing details for the current guide ID.
       dispatch(fetchGuidePricingDetails(guideId));
     }
-  }, [dispatch, guideId, guide]);
+  }, [dispatch, guideId]); // Removed 'guide' from dependency array to prevent re-fetching loops
+
+  const selectedLocation = useMemo(() => {
+    if (!pricingDetails || !locationName) return null;
+    return pricingDetails.locations.find(
+      loc => loc.placeName.trim().toLowerCase() === locationName.trim().toLowerCase()
+    ) || null;
+  }, [pricingDetails, locationName]);
+
+  const selectedLanguage = useMemo(() => {
+    if (!pricingDetails || !languageName) return null;
+    return pricingDetails.languages.find(
+      lang => lang.languageName.trim().toLowerCase() === languageName.trim().toLowerCase()
+    ) || null;
+  }, [pricingDetails, languageName]);
+
+  // ✅ ADDED: Enhanced logging to debug data objects
+  useEffect(() => {
+    if(!pricingLoading) {
+        console.log("--- DEBUGGING PRICING ---");
+        console.log("URL Location Name:", locationName);
+        console.log("URL Language Name:", languageName);
+        console.log("Fetched Pricing Details:", pricingDetails);
+        console.log("FOUND Selected Location Object:", selectedLocation);
+        console.log("FOUND Selected Language Object:", selectedLanguage);
+        console.log("--------------------------");
+    }
+  }, [pricingLoading, pricingDetails, selectedLocation, selectedLanguage, locationName, languageName]);
+
+
+  const totalPrice = useMemo(() => {
+    if (!selectedLocation || !date?.from || !date?.to || numTravelers <= 0) {
+      return 0;
+    }
+
+    const numberOfDays = differenceInCalendarDays(date.to, date.from) + 1;
+    if (numberOfDays <= 0) return 0;
+
+    let locationPricePerDay = 0;
+    if (numTravelers >= 1 && numTravelers <= 5) {
+      locationPricePerDay = selectedLocation.pricing?.smallGroup?.price ?? 0;
+    } else if (numTravelers >= 6 && numTravelers <= 14) {
+      locationPricePerDay = selectedLocation.pricing?.mediumGroup?.price ?? 0;
+    } else if (numTravelers >= 15) {
+      locationPricePerDay = selectedLocation.pricing?.largeGroup?.price ?? 0;
+    }
+
+    let languageChargePerDay = 0;
+    if (selectedLanguage) {
+      if (numTravelers >= 1 && numTravelers <= 14) {
+        languageChargePerDay = selectedLanguage.pricing?.standardGroup?.price ?? 0;
+      } else if (numTravelers >= 15) {
+        languageChargePerDay = selectedLanguage.pricing?.largeGroup?.price ?? 0;
+      }
+    }
+
+    const total = (locationPricePerDay + languageChargePerDay) * numberOfDays;
+    
+    // ✅ ADDED: Log the final calculation steps
+    console.log(`CALCULATION: (Location: ₹${locationPricePerDay} + Language: ₹${languageChargePerDay}) * ${numberOfDays} days = ₹${total}`);
+    
+    return total;
+
+  }, [selectedLocation, selectedLanguage, numTravelers, date]);
+
 
   const handleProceedToCheckout = () => {
+    // Small change: Check totalPrice directly
+    if (totalPrice <= 0) {
+      alert("Could not calculate a valid price. Please check the selected options or contact support.");
+      return;
+    }
     if (!guide || !locationName || !languageName || !date?.from || !date?.to || !fullName || !email || !phone) {
       alert("Please fill all booking and contact details before proceeding.");
       return;
@@ -66,7 +132,6 @@ export default function BookGuidePage() {
       numTravelers: String(numTravelers),
       totalPrice: String(totalPrice),
       guidePhoto: guide.photo || '/placeholder-avatar.png',
-      // Pass contact info to pre-fill the checkout page
       fullName,
       email,
       phone,
@@ -75,67 +140,11 @@ export default function BookGuidePage() {
     router.push(`/find-guides/checkout?${queryParams.toString()}`);
   };
 
-  // --- ✅ MODIFIED: Detailed Logging for Debugging ---
-  const selectedLocation = useMemo(() => {
-    console.log("--- 🤔 Recalculating selectedLocation ---");
-    
-    if (!pricingDetails || !locationName) {
-      // console.log("   Bailing out: pricingDetails or locationName is missing.");
-      // console.log("   - pricingDetails:", pricingDetails);
-      // console.log("   - locationName:", locationName);
-      return null;
-    }
-
-    // console.log("  - Searching for location:", `"${locationName}"`);
-    // console.log("  - In this array:", pricingDetails.locations);
-
-    const foundLocation = pricingDetails.locations.find(loc => {
-      const fromDB = loc.placeName.trim().toLowerCase();
-      const fromURL = locationName.trim().toLowerCase();
-      const isMatch = fromDB === fromURL;
-      // console.log(`    - Comparing DB:"${fromDB}" with URL:"${fromURL}" | Match: ${isMatch}`);
-      return isMatch;
-    });
-
-    // console.log("  ✅ Found location object:", foundLocation || null);
-    return foundLocation || null;
-  }, [pricingDetails, locationName]);
-
-  const selectedLanguage = useMemo(() => {
-    // console.log("--- 🤔 Recalculating selectedLanguage ---");
-
-    if (!pricingDetails || !languageName) {
-      // console.log("  Bailing out: pricingDetails or languageName is missing.");
-      return null;
-    }
-
-    const foundLanguage = pricingDetails.languages.find(
-      lang => lang.languageName.trim().toLowerCase() === languageName.trim().toLowerCase()
-    );
-
-    // console.log("  ✅ Found language object:", foundLanguage || null);
-    return foundLanguage || null;
-  }, [pricingDetails, languageName]);
-
-
-  const totalPrice = useMemo(() => {
-    if (!selectedLocation || !date?.from || !date?.to || numTravelers <= 0) {
-      return 0;
-    }
-    const locationPrice = selectedLocation.pricePerPerson || 0;
-    const languageCharge = selectedLanguage?.extraCharge || 0;
-    const numberOfDays = differenceInCalendarDays(date.to, date.from) + 1;
-    if (numberOfDays <= 0) return 0;
-    const totalPerPersonPerDay = locationPrice + languageCharge;
-    return totalPerPersonPerDay * numTravelers * numberOfDays;
-  }, [selectedLocation, selectedLanguage, numTravelers, date]);
-
-
+  // --- (The rest of the component JSX remains exactly the same) ---
   if (guideLoading || !guide || guide._id !== guideId) {
     return <PageSkeleton />;
   }
   
-  // This check is important for when the URL is invalid.
   if (!locationName || !languageName || (!pricingLoading && pricingDetails && (!selectedLocation || !selectedLanguage))) {
     return (
       <div className="min-h-screen flex items-center justify-center text-center p-4">
@@ -147,7 +156,7 @@ export default function BookGuidePage() {
       </div>
     );
   }
-
+  
   const disabledDays = (day: Date): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);

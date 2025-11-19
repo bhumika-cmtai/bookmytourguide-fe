@@ -12,12 +12,21 @@ export interface AddOn {
 /**
  * Represents the main structure for a tour location package.
  */
+
+
+interface PriceTier {
+  price: number;
+}
 export interface AdminLocation {
   _id: string;
   placeName: string;
   description: string;
   image: string;
-  pricePerPerson: number;
+  pricing: {
+    smallGroup: PriceTier;  // 1-5 Persons
+    mediumGroup: PriceTier; // 6-14 Persons
+    largeGroup: PriceTier;  // 15-40 Persons
+  };
   category: string;
   addOns: AddOn[];
   isActive: boolean;
@@ -42,12 +51,20 @@ export type CreateSubscriptionPlan = Omit<SubscriptionPlan, '_id' | 'createdAt' 
 export interface LanguageOption {
   _id: string;
   languageName: string;
-  extraCharge: number;
-  createdAt?: string;
-  updatedAt?: string;
+  pricing: {
+    standardGroup: { price: number }; // For 1-14 Persons
+    largeGroup: { price: number };    // For 15+ Persons
+  };
 }
 
-export type CreateLanguageOption = Omit<LanguageOption, '_id' | 'createdAt' | 'updatedAt'>;
+// ✅ UPDATED: The type for creating a new language
+export interface CreateLanguageOption {
+  languageName: string;
+  pricing: {
+    standardGroup: { price: number };
+    largeGroup: { price: number };
+  };
+}
   
 /**
  * Defines the shape of data required to create a new location,
