@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { Header } from "@/components/layout/website/header";
 import { Footer } from "@/components/layout/website/footer";
 import Script from 'next/script';
+import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
 // import { CartProvider } from "@/contexts/CardContext";
 
 export const metadata: Metadata = {
@@ -27,6 +28,10 @@ export default function RootLayout({
           <Suspense fallback={null}>{children}
           </Suspense>
           <Footer />
+          <WhatsAppFloatingButton
+            phoneNumber="917470222666"
+            message="Hi, I want to know more about BookMyTourGuide"
+          />
           <Analytics />
           <Script src="https://checkout.razorpay.com/v1/checkout.js" />
         </>
