@@ -1,10 +1,26 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { apiService } from '@/lib/service/api';
+
+// Define Lead interface
+export interface Lead {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  nationality?: string;
+  category: string;
+  subject: string;
+  message: string;
+  status: string;
+  createdAt: string;
+}
 
 // Define the type for the data you send to the API
 interface LeadData {
   name: string;
   email: string;
   phone: string;
+  nationality?: string;
   category: string;
   subject: string;
   message: string;
@@ -12,6 +28,7 @@ interface LeadData {
 
 // Define the shape of this slice's state
 interface LeadsState {
+  leads: Lead[];
   loading: boolean;
   error: string | null;
   success: boolean;
@@ -19,60 +36,51 @@ interface LeadsState {
 
 // Set the initial state
 const initialState: LeadsState = {
+  leads: [],
   loading: false,
   error: null,
   success: false,
 };
-
-// --- MODIFIED SECTION ---
-// Get the base URL from the environment variable
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Create an async thunk for the API call
 export const createLead = createAsyncThunk(
   'leads/create',
   async (leadData: LeadData, { rejectWithValue }) => {
     try {
-      // Construct the full API endpoint URL
-      const response = await fetch(`${API_BASE_URL}/api/leads`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(leadData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Return the error message from the backend
-        return rejectWithValue(data.message || 'Failed to create lead');
-      }
-
-      return data;
+      const response = await apiService.post<Lead>('/api/leads', leadData);
+      return response.data!;
     } catch (error: any) {
-      // Handle network errors or other exceptions
-      return rejectWithValue(error.message || 'Try again!');
+      return rejectWithValue(error.message || 'Failed to create lead');
     }
   }
 );
-// --- END OF MODIFIED SECTION ---
+
+export const fetchLeads = createAsyncThunk(
+  'leads/fetchAll',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await apiService.get<Lead[]>('/api/leads?limit=1000');
+      return response.data || [];
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to fetch leads');
+    }
+  }
+);
 
 // Create the slice
 const leadsSlice = createSlice({
   name: 'leads',
   initialState,
   reducers: {
-    // Synchronous action to reset the state
     resetLeadState: (state) => {
       state.loading = false;
       state.error = null;
       state.success = false;
     },
   },
-  // Handle the different states of the async thunk
   extraReducers: (builder) => {
     builder
+      // createLead
       .addCase(createLead.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -83,6 +91,19 @@ const leadsSlice = createSlice({
         state.success = true;
       })
       .addCase(createLead.rejected, (state, action: PayloadAction<any>) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // fetchLeads
+      .addCase(fetchLeads.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchLeads.fulfilled, (state, action) => {
+        state.loading = false;
+        state.leads = action.payload;
+      })
+      .addCase(fetchLeads.rejected, (state, action: PayloadAction<any>) => {
         state.loading = false;
         state.error = action.payload;
       });

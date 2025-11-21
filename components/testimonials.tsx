@@ -69,9 +69,9 @@ export function Testimonials() {
   const averageRating =
     testimonials.length > 0
       ? (
-          testimonials.reduce((acc, t) => acc + (t.rating || 0), 0) /
-          testimonials.length
-        ).toFixed(1)
+        testimonials.reduce((acc, t) => acc + (t.rating || 0), 0) /
+        testimonials.length
+      ).toFixed(1)
       : "0.0";
 
   return (
@@ -191,6 +191,7 @@ const VideoSlide = memo(function VideoSlide({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
@@ -216,15 +217,25 @@ const VideoSlide = memo(function VideoSlide({
       console.error("Video error:", e);
       setHasError(true);
     };
+    const onLoadedData = () => {
+      setIsLoaded(true);
+      // Autoplay video once loaded
+      video.play().catch((err) => {
+        console.error("Autoplay failed:", err);
+        // Autoplay might be blocked by browser, that's okay
+      });
+    };
 
     video.addEventListener("play", onPlay);
     video.addEventListener("pause", onPause);
     video.addEventListener("error", onError);
+    video.addEventListener("loadeddata", onLoadedData);
 
     return () => {
       video.removeEventListener("play", onPlay);
       video.removeEventListener("pause", onPause);
       video.removeEventListener("error", onError);
+      video.removeEventListener("loadeddata", onLoadedData);
     };
   }, []);
 
@@ -244,17 +255,22 @@ const VideoSlide = memo(function VideoSlide({
       <video
         ref={videoRef}
         src={testimonial.video}
+        autoPlay
         loop
         muted
         playsInline
-        preload="metadata"
+        preload="auto"
         className="w-full h-full object-cover"
         onClick={togglePlay}
       />
+      {!isLoaded && (
+        <div className="absolute inset-0 bg-black/90 flex items-center justify-center">
+          <Loader className="w-12 h-12 animate-spin text-white" />
+        </div>
+      )}
       <div
-        className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-300 cursor-pointer ${
-          isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"
-        }`}
+        className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-300 cursor-pointer ${isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"
+          }`}
         onClick={togglePlay}
       >
         {!isPlaying && <Play className="w-16 h-16 text-white drop-shadow-lg" />}

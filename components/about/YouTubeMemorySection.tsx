@@ -8,7 +8,8 @@ import {
   slideInRight,
   scaleIn,
 } from "@/lib/motion-variants";
-import { Video, Share, Heart, Play, Film } from "lucide-react";
+// Imported the Youtube icon here
+import { Video, Share, Heart, Film, Youtube } from "lucide-react";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -16,7 +17,7 @@ export default function YouTubeMemorySection() {
   const { t } = useLanguage();
 
   const features = [
-    { textKey: "yt_feat_1", icon: Play, color: "from-red-500 to-pink-500" },
+    { textKey: "yt_feat_1", icon: Video, color: "from-red-500 to-pink-500" },
     { textKey: "yt_feat_2", icon: Share, color: "from-blue-500 to-cyan-500" },
     { textKey: "yt_feat_3", icon: Heart, color: "from-purple-500 to-pink-500" },
   ];
@@ -75,15 +76,22 @@ export default function YouTubeMemorySection() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                <motion.div
+                {/* === MODIFIED SECTION START === */}
+                <motion.a
+                  href="https://www.youtube.com/@GETMYGUIDE"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                  aria-label="Watch on YouTube"
                 >
                   <div className="w-20 h-20 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg group-hover:bg-white transition-colors">
-                    <Play className="w-8 h-8 text-red-500 ml-1 fill-current" />
+                    {/* Replaced Play icon with Youtube icon */}
+                    <Youtube className="w-10 h-10 text-red-500" />
                   </div>
-                </motion.div>
+                </motion.a>
+                {/* === MODIFIED SECTION END === */}
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="bg-background/90 backdrop-blur-sm rounded-xl p-4 border">
                     <div className="flex items-center gap-3">

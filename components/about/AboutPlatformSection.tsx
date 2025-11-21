@@ -125,7 +125,7 @@ export default function AboutPlatformSection() {
                 transition={{ delay: 0.6, duration: 0.6, type: "spring" }}
                 className="absolute -bottom-6 -left-6 bg-background border rounded-xl p-4 shadow-xl backdrop-blur-sm max-w-[180px]"
               >
-                <div className="text-center">
+                <div className="text-left">
                   <div className="text-base font-bold text-foreground mb-1">
                     {t("about_card_gov")}
                   </div>

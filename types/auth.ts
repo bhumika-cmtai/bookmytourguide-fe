@@ -54,6 +54,24 @@ export interface UserState {
     page: number;
     totalPages: number;
   };
+  searchResults: SearchResults | null;
+  isSearching: boolean;
+  searchError: string | null;
+}
+
+export interface SearchResultItem {
+  _id: string;
+  title?: string;
+  placeName?: string;
+  description: string;
+  image?: string;
+  images?: string[];
+  price?: number;
+}
+
+export interface SearchResults {
+  packages: SearchResultItem[];
+  locations: SearchResultItem[];
 }
 
 export interface LoginRequest {
@@ -94,7 +112,7 @@ export interface GetUsersParams {
   page?: number;
   limit?: number;
   search?: string;
-  role?:string;
+  role?: string;
 }
 
 export interface OTPRequest {

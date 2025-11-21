@@ -39,14 +39,15 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext"; // Import karein
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function ContactPage() {
-  const { t } = useLanguage(); // Add karein
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
+    nationality: "",
     subject: "",
     category: "",
     message: "",
@@ -63,6 +64,7 @@ export default function ContactPage() {
         name: "",
         email: "",
         phone: "",
+        nationality: "",
         subject: "",
         category: "",
         message: "",
@@ -252,20 +254,36 @@ export default function ContactPage() {
                             />
                           </div>
                         </div>
-                        <div>
-                          <Label htmlFor="email">
-                            {t("contact_form_email_label")}
-                          </Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) =>
-                              handleInputChange("email", e.target.value)
-                            }
-                            placeholder={t("contact_form_email_placeholder")}
-                            required
-                          />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="email">
+                              {t("contact_form_email_label")}
+                            </Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) =>
+                                handleInputChange("email", e.target.value)
+                              }
+                              placeholder={t("contact_form_email_placeholder")}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="nationality">
+                              {t("contact_form_nationality_label") || "Nationality"}
+                            </Label>
+                            <Input
+                              id="nationality"
+                              value={formData.nationality}
+                              onChange={(e) =>
+                                handleInputChange("nationality", e.target.value)
+                              }
+                              placeholder={t("contact_form_nationality_placeholder") || "Your nationality"}
+                              required
+                            />
+                          </div>
                         </div>
                         <div>
                           <Label htmlFor="category">

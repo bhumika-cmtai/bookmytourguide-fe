@@ -25,13 +25,15 @@ import {
   PersonStanding,
   Languages,
   Podcast,
-  Book
+  Book,
+  FileText
 } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
 
 // --- Navigation Links for Each Role ---
 const adminNavigation = [
   { name: "Dashboard", href: "/dashboard/admin", icon: LayoutGrid },
+  { name: "Leads", href: "/dashboard/admin/leads", icon: FileText },
   { name: "Package", href: "/dashboard/admin/package", icon: Globe2 },
   { name: "Locations", href: "/dashboard/admin/locations", icon: Map },
   { name: "Languages", href: "/dashboard/admin/languages", icon: Languages },
@@ -138,9 +140,8 @@ export default function Sidebar({
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/60 lg:hidden z-40 transition-opacity ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 bg-black/60 lg:hidden z-40 transition-opacity ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
         onClick={onClose}
       />
 
@@ -177,19 +178,17 @@ export default function Sidebar({
                   href={item.href}
                   onClick={() => handleLinkClick(item.href)}
                   className={`relative flex items-center gap-4 rounded-xl px-3 py-3 transition-all duration-200 
-                    ${
-                      isActive
-                        ? "bg-white text-teal-600 font-bold shadow-sm"
-                        : "text-slate-600 hover:bg-teal-500/10 hover:text-teal-600"
+                    ${isActive
+                      ? "bg-white text-teal-600 font-bold shadow-sm"
+                      : "text-slate-600 hover:bg-teal-500/10 hover:text-teal-600"
                     }`}
                 >
                   {isActive && (
                     <div className="absolute left-0 h-8 w-1 rounded-r-full bg-teal-500" />
                   )}
                   <item.icon
-                    className={`h-6 w-6 transition-colors ${
-                      isActive ? "text-teal-500" : ""
-                    }`}
+                    className={`h-6 w-6 transition-colors ${isActive ? "text-teal-500" : ""
+                      }`}
                   />
                   <span>{item.name}</span>
                 </Link>

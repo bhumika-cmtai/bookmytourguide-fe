@@ -1,7 +1,7 @@
 // lib/redux/userSlice.ts
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { apiService } from "../service/api";
-import { User, UserState, CreateUserRequest, UpdateUserRequest, GetUsersParams, ApiResponse } from "@/types/auth";
+import { User, UserState, CreateUserRequest, UpdateUserRequest, GetUsersParams, ApiResponse, SearchResults } from "@/types/auth";
 
 // --- IMPORTANT: Import the actions from authSlice to listen to them ---
 import { loginUser, getCurrentUser } from "./authSlice";
@@ -12,6 +12,9 @@ const initialState: UserState = {
   loading: false,
   error: null,
   pagination: { total: 0, page: 1, totalPages: 0 },
+  searchResults: null,
+  isSearching: false,
+  searchError: null,
 };
 
 // Helper for error handling
@@ -135,6 +138,20 @@ export const deleteUser = createAsyncThunk<string, string>(
   }
 );
 
+// Search packages and locations
+export const searchResources = createAsyncThunk<SearchResults, string>(
+  "user/searchResources",
+  async (query, { rejectWithValue }) => {
+    try {
+      const result = await apiService.get(`/api/users/search?query=${encodeURIComponent(query)}`);
+      if (!result.success) return rejectWithValue(result.message);
+      return result.data;
+    } catch (err: any) {
+      return rejectWithValue(handleError(err));
+    }
+  }
+);
+
 // --- Slice ---
 const userSlice = createSlice({
   name: "user",
@@ -152,6 +169,11 @@ const userSlice = createSlice({
     },
     clearCurrentUser: (state) => {
       state.currentUser = null;
+    },
+    clearSearch: (state) => {
+      state.searchResults = null;
+      state.isSearching = false;
+      state.searchError = null;
     },
   },
   extraReducers: (builder) => {
@@ -259,8 +281,23 @@ const userSlice = createSlice({
         state.pagination.total = Math.max(0, state.pagination.total - 1);
       })
       .addCase(deleteUser.rejected, setRejected);
+
+    // Search Resources
+    builder
+      .addCase(searchResources.pending, (state) => {
+        state.isSearching = true;
+        state.searchError = null;
+      })
+      .addCase(searchResources.fulfilled, (state, action) => {
+        state.isSearching = false;
+        state.searchResults = action.payload;
+      })
+      .addCase(searchResources.rejected, (state, action) => {
+        state.isSearching = false;
+        state.searchError = action.payload as string;
+      });
   },
 });
 
-export const { setError, clearUsers, clearError, clearCurrentUser } = userSlice.actions;
+export const { setError, clearUsers, clearError, clearCurrentUser, clearSearch } = userSlice.actions;
 export default userSlice.reducer;

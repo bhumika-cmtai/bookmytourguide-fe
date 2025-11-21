@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, FC } from "react";
+import { useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store";
 import { getAllGuides } from "@/lib/redux/thunks/guide/guideThunk";
@@ -11,7 +12,7 @@ import { clearGuides } from "@/lib/redux/guideSlice";
 import { GuideCard } from "@/components/GuideCard";
 import HeroSection from "@/components/all/CommonHeroSection";
 import {
-  Select, 
+  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -29,11 +30,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Compass, Languages, XCircle, Frown } from "lucide-react";
 import { GuideProfile, AdminLocation, LanguageOption } from "@/lib/data";
-import { useLanguage } from "@/contexts/LanguageContext"; // Import karein
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function FindGuidesPage() {
   const dispatch: AppDispatch = useDispatch();
-  const { t } = useLanguage(); // Add karein
+  const { t } = useLanguage();
+  const searchParams = useSearchParams();
 
   const [location, setLocation] = useState("");
   const [language, setLanguage] = useState("");
@@ -55,6 +57,19 @@ export default function FindGuidesPage() {
     dispatch(fetchAdminLocations());
     dispatch(fetchLanguages());
   }, [dispatch]);
+
+  // Auto-search if params exist
+  useEffect(() => {
+    const loc = searchParams.get("location");
+    const lang = searchParams.get("language");
+
+    if (loc && lang) {
+      setLocation(loc);
+      setLanguage(lang);
+      setSearchPerformed(true);
+      dispatch(getAllGuides({ location: loc, language: lang, page: 1, limit: 20 }));
+    }
+  }, [searchParams, dispatch]);
 
   const handleSearch = useCallback(() => {
     if (!location || !language) return;

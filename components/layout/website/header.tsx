@@ -19,6 +19,7 @@ import {
   Mail,
   Settings,
   Users2,
+  Search,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -28,10 +29,12 @@ import {
   supportedLanguages,
   LanguageCode,
 } from "@/contexts/LanguageContext";
+import { SearchModal } from "./SearchModal";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const { language, setLanguage, t } = useLanguage();
 
@@ -131,11 +134,10 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative flex items-center px-2.5 py-2.5 rounded-lg font-medium transition-all duration-300 group whitespace-nowrap ${
-                    active
+                  className={`relative flex items-center px-2.5 py-2.5 rounded-lg font-medium transition-all duration-300 group whitespace-nowrap ${active
                       ? "text-primary bg-primary/10 shadow-sm"
                       : "text-gray-700 hover:text-primary hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   <span className="text-xs font-semibold">
                     {t(item.labelKey)}
@@ -149,6 +151,14 @@ export function Header() {
           </nav>
 
           <div className="hidden lg:flex items-center space-x-4">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2.5 rounded-xl hover:bg-gray-50 transition-all duration-300 border border-gray-200 text-gray-700 hover:text-primary group"
+              aria-label="Search"
+            >
+              <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            </button>
+
             <div className="relative">
               <select
                 value={language}
@@ -278,6 +288,14 @@ export function Header() {
           </div>
 
           <button
+            onClick={() => setIsSearchOpen(true)}
+            className="lg:hidden p-2.5 mr-2 rounded-xl hover:bg-gray-50 transition-colors border border-gray-200"
+            aria-label="Search"
+          >
+            <Search className="w-5 h-5 text-gray-700" />
+          </button>
+
+          <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="lg:hidden p-2.5 rounded-xl hover:bg-gray-50 transition-colors border border-gray-200"
             aria-label="Toggle menu"
@@ -298,11 +316,10 @@ export function Header() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center space-x-3 px-4 py-2.5 rounded-lg font-medium text-sm ${
-                      isActive(item.href)
+                    className={`flex items-center space-x-3 px-4 py-2.5 rounded-lg font-medium text-sm ${isActive(item.href)
                         ? "text-primary bg-primary/10"
                         : "text-gray-700 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     <item.icon
                       className={`w-4 h-4 ${isActive(item.href) ? "text-primary" : "text-gray-500"}`}
@@ -388,6 +405,11 @@ export function Header() {
             </div>
           </div>
         )}
+
+        <SearchModal
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+        />
       </div>
     </header>
   );
