@@ -16,6 +16,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader,
+  VolumeX, // Mute icon
+  Volume2, // Unmute icon
 } from "lucide-react";
 import { staggerContainer, fadeInUp } from "@/lib/motion-variants";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -190,9 +192,11 @@ const VideoSlide = memo(function VideoSlide({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // New state for volume
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Function to toggle play/pause
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -207,6 +211,17 @@ const VideoSlide = memo(function VideoSlide({
     }
   }, []);
 
+  // New function to toggle mute/unmute
+  const toggleMute = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent toggling play when clicking volume
+    const video = videoRef.current;
+    if (!video) return;
+
+    const newMutedState = !video.muted;
+    video.muted = newMutedState;
+    setIsMuted(newMutedState);
+  }, []);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -219,23 +234,29 @@ const VideoSlide = memo(function VideoSlide({
     };
     const onLoadedData = () => {
       setIsLoaded(true);
-      // Autoplay video once loaded
       video.play().catch((err) => {
         console.error("Autoplay failed:", err);
-        // Autoplay might be blocked by browser, that's okay
       });
+    };
+    // New listener for volume changes
+    const onVolumeChange = () => {
+      setIsMuted(video.muted);
     };
 
     video.addEventListener("play", onPlay);
     video.addEventListener("pause", onPause);
     video.addEventListener("error", onError);
     video.addEventListener("loadeddata", onLoadedData);
+    video.addEventListener("volumechange", onVolumeChange);
+
 
     return () => {
       video.removeEventListener("play", onPlay);
       video.removeEventListener("pause", onPause);
       video.removeEventListener("error", onError);
       video.removeEventListener("loadeddata", onLoadedData);
+      video.removeEventListener("volumechange", onVolumeChange);
+
     };
   }, []);
 
@@ -257,7 +278,7 @@ const VideoSlide = memo(function VideoSlide({
         src={testimonial.video}
         autoPlay
         loop
-        muted
+        muted // Initial state is muted
         playsInline
         preload="auto"
         className="w-full h-full object-cover"
@@ -268,6 +289,8 @@ const VideoSlide = memo(function VideoSlide({
           <Loader className="w-12 h-12 animate-spin text-white" />
         </div>
       )}
+
+      {/* Play/Pause overlay */}
       <div
         className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-300 cursor-pointer ${isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"
           }`}
@@ -275,6 +298,18 @@ const VideoSlide = memo(function VideoSlide({
       >
         {!isPlaying && <Play className="w-16 h-16 text-white drop-shadow-lg" />}
       </div>
+
+      {/* New Volume Button */}
+      <Button
+        size="icon"
+        variant="ghost"
+        className="absolute top-4 right-4 z-20 bg-black/30 hover:bg-black/50 text-white rounded-full w-10 h-10"
+        onClick={toggleMute}
+      >
+        {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+      </Button>
+
+      {/* Bottom info panel */}
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent text-white pointer-events-none">
         <h4 className="font-bold text-lg">{testimonial.name}</h4>
         {testimonial.position && (

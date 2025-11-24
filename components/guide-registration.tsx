@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, Shield, Globe, Award, Users } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import Link from "next/link";
 
 export function GuideRegistration() {
   const { t } = useLanguage();
@@ -89,13 +90,14 @@ export function GuideRegistration() {
                 );
               })}
             </div>
-
-            <Button
-              size="lg"
-              className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-            >
-              {t("start_application")}
-            </Button>
+            <Link href="/register">
+              <Button
+                size="lg"
+                className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+              >
+                {t("start_application")}
+              </Button>
+            </Link>
           </div>
 
           {/* Right Content - Requirements Card */}

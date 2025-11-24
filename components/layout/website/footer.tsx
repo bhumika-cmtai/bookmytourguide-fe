@@ -140,22 +140,22 @@ export function Footer() {
             </ul>
           </div>
 
-            {/* Contact Details Section */}
-             <div className="space-y-2 text-sm">
-                <h4 className="text-lg font-semibold mb-4">{t("footer_contact_details")}</h4>
-                <div className="flex items-center">
-                  <Phone className="w-4 h-4 mr-2 opacity-80" />
-                  <span>+1 (555) 123-4567</span>
-                </div>
-                <div className="flex items-center">
-                  <Mail className="w-4 h-4 mr-2 opacity-80" />
-                <span>hello@wanderguide.com</span>
-                </div>
-                <div className="flex items-center">
-                  <Globe className="w-4 h-4 mr-2 opacity-80" />
-                  <span>{t("footer_available_languages")}</span>
-              </div>
+          {/* Contact Details Section */}
+          <div className="space-y-2 text-sm">
+            <h4 className="text-lg font-semibold mb-4">{t("footer_contact_details")}</h4>
+            <div className="flex items-center">
+              <Phone className="w-4 h-4 mr-2 opacity-80" />
+              <span>+1 (555) 123-4567</span>
             </div>
+            <div className="flex items-center">
+              <Mail className="w-4 h-4 mr-2 opacity-80" />
+              <span>hello@wanderguide.com</span>
+            </div>
+            <div className="flex items-center">
+              <Globe className="w-4 h-4 mr-2 opacity-80" />
+              <span>{t("footer_available_languages")}</span>
+            </div>
+          </div>
         </div>
 
         {/* Newsletter Signup */}
@@ -200,26 +200,26 @@ export function Footer() {
         {/* Social Links & Copyright */}
         <div className="border-t border-primary-foreground/20 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex space-x-4">
-            <a
+            {/* <a
               href="#"
               className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
             >
               <Facebook className="w-5 h-5" />
-            </a>
-            <a
+            </a> */}
+            {/* <a
               href="#"
               className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
             >
               <Twitter className="w-5 h-5" />
-            </a>
+            </a> */}
             <a
-              href="#"
+              href="https://www.instagram.com/getmyguide.in?igsh=NzFzMTQ0MGRnZmRn&utm_source=ig_contact_invite"
               className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
             >
               <Instagram className="w-5 h-5" />
             </a>
             <a
-              href="#"
+              href="https://www.youtube.com/@GETMYGUIDE"
               className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-secondary transition-colors"
             >
               <Youtube className="w-5 h-5" />

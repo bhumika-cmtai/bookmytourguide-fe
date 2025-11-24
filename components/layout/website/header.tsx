@@ -107,10 +107,10 @@ export function Header() {
       <div className="container max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="relative w-12 h-12 overflow-hidden rounded-xl bg-primary/10 p-0.5 transition-transform group-hover:scale-105">
-              <div className="w-full h-full rounded-lg overflow-hidden bg-white">
+            <div className="relative w-20 h-20 overflow-hidden rounded-xl  p-0.5 transition-transform group-hover:scale-105">
+              <div className="w-full h-full rounded-lg overflow-hidden">
                 <Image
-                  src="/images/logo.jpg"
+                  src="/images/logo.png"
                   alt="Book My Tour Guide"
                   fill
                   className="object-contain p-1"
@@ -135,8 +135,8 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   className={`relative flex items-center px-2.5 py-2.5 rounded-lg font-medium transition-all duration-300 group whitespace-nowrap ${active
-                      ? "text-primary bg-primary/10 shadow-sm"
-                      : "text-gray-700 hover:text-primary hover:bg-gray-50"
+                    ? "text-primary bg-primary/10 shadow-sm"
+                    : "text-gray-700 hover:text-primary hover:bg-gray-50"
                     }`}
                 >
                   <span className="text-xs font-semibold">
@@ -317,8 +317,8 @@ export function Header() {
                     key={item.href}
                     href={item.href}
                     className={`flex items-center space-x-3 px-4 py-2.5 rounded-lg font-medium text-sm ${isActive(item.href)
-                        ? "text-primary bg-primary/10"
-                        : "text-gray-700 hover:bg-gray-50"
+                      ? "text-primary bg-primary/10"
+                      : "text-gray-700 hover:bg-gray-50"
                       }`}
                   >
                     <item.icon
