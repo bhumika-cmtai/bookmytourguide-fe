@@ -73,8 +73,8 @@ export default function HowItWorksPage() {
       titleKey: "how_step_4_title",
       descriptionKey: "how_step_4_desc",
       detailsKeys: [
-        "how_step_4_detail_1",
-        "how_step_4_detail_2",
+        // "how_step_4_detail_1",
+        // "how_step_4_detail_2",
         "how_step_4_detail_3",
         "how_step_4_detail_4",
       ],
@@ -177,9 +177,8 @@ export default function HowItWorksPage() {
               {steps.map((step, index) => (
                 <div
                   key={step.step}
-                  className={`flex flex-col lg:flex-row items-center gap-8 ${
-                    index % 2 === 1 ? "lg:flex-row-reverse" : ""
-                  }`}
+                  className={`flex flex-col lg:flex-row items-center gap-8 ${index % 2 === 1 ? "lg:flex-row-reverse" : ""
+                    }`}
                 >
                   <div
                     className="flex-1 animate-fade-in-up"

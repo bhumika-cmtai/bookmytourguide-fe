@@ -8,8 +8,8 @@ import {
   slideInRight,
   scaleIn,
 } from "@/lib/motion-variants";
-// Imported the Youtube icon here
-import { Video, Share, Heart, Film, Youtube } from "lucide-react";
+// Added 'Play' to imports
+import { Video, Share, Heart, Film, Play } from "lucide-react";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -76,22 +76,28 @@ export default function YouTubeMemorySection() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                {/* === MODIFIED SECTION START === */}
+
+                {/* === MODIFIED SECTION START: Official YouTube Button Style === */}
                 <motion.a
                   href="https://www.youtube.com/@GETMYGUIDE"
                   target="_blank"
                   rel="noopener noreferrer"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                  className="absolute inset-0 flex items-center justify-center cursor-pointer group/btn"
                   aria-label="Watch on YouTube"
                 >
-                  <div className="w-20 h-20 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg group-hover:bg-white transition-colors">
-                    {/* Replaced Play icon with Youtube icon */}
-                    <Youtube className="w-10 h-10 text-red-500" />
+                  <div className="relative transition-transform duration-300 group-hover/btn:scale-110">
+                    {/* Subtle White Glow for contrast */}
+                    <div className="absolute inset-0 bg-white/20 blur-lg rounded-[20%]" />
+
+                    {/* The Red YouTube "Squircle" Box */}
+                    <div className="relative w-[88px] h-[60px] bg-[#FF0000] rounded-[18px] flex items-center justify-center shadow-2xl z-10">
+                      {/* White Solid Play Icon */}
+                      <Play className="w-10 h-10 text-white fill-white ml-1" />
+                    </div>
                   </div>
                 </motion.a>
                 {/* === MODIFIED SECTION END === */}
+
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="bg-background/90 backdrop-blur-sm rounded-xl p-4 border">
                     <div className="flex items-center gap-3">
