@@ -71,7 +71,7 @@ export function Footer() {
                 <MapPin className="w-6 h-6 text-secondary-foreground" />
               </div>
               <div>
-                <h3 className="text-xl font-bold">WanderGuide</h3>
+                <h3 className="text-xl font-bold">BookMyTourGuide</h3>
                 <p className="text-sm opacity-80">{t("footer_company_subtitle")}</p>
               </div>
             </div>
@@ -145,11 +145,11 @@ export function Footer() {
             <h4 className="text-lg font-semibold mb-4">{t("footer_contact_details")}</h4>
             <div className="flex items-center">
               <Phone className="w-4 h-4 mr-2 opacity-80" />
-              <span>+1 (555) 123-4567</span>
+              <span>+91 98918 88444</span>
             </div>
             <div className="flex items-center">
               <Mail className="w-4 h-4 mr-2 opacity-80" />
-              <span>hello@wanderguide.com</span>
+              <span>getmyguide.in@gmail.com</span>
             </div>
             <div className="flex items-center">
               <Globe className="w-4 h-4 mr-2 opacity-80" />

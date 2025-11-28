@@ -149,7 +149,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           app_step_2: "2. Document verification (2-3 days)",
           app_step_3: "3. Video interview with our team",
           app_step_4: "4. Background check completion",
-          app_step_5: "5. Welcome to WanderGuide family!",
+          app_step_5: "5. Welcome to BookMyTourGuide family!",
 
           // Booking Process
           booking_proc_title: "Simple Booking Process",
@@ -303,7 +303,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           footer_newsletter_prompt: "Get the latest tours and exclusive offers",
           footer_email_placeholder: "Enter your email",
           footer_subscribe: "Subscribe",
-          footer_copyright: "© 2024 WanderGuide. All rights reserved.",
+          footer_copyright: "© 2024 BookMyTourGuide. All rights reserved.",
           footer_legal_links: "Privacy Policy | Terms of Service | Cookie Policy",
 
           help_center: "Help Center",
@@ -644,7 +644,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           app_step_2: "2. Verificación de documentos (2-3 días)",
           app_step_3: "3. Entrevista por video con nuestro equipo",
           app_step_4: "4. Finalización de la verificación de antecedentes",
-          app_step_5: "5. ¡Bienvenido a la familia WanderGuide!",
+          app_step_5: "5. ¡Bienvenido a la familia BookMyTourGuide!",
           booking_proc_title: "Proceso de Reserva Sencillo",
           booking_proc_desc:
             "Reserva tu experiencia de tour perfecta en solo unos pocos clics. Nuestro proceso optimizado asegura que obtengas el mejor guía para tus necesidades.",
@@ -694,7 +694,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           footer_email_placeholder: "Ingresa tu correo electrónico",
           footer_subscribe: "Suscribir",
           footer_copyright:
-            "© 2024 WanderGuide. Todos los derechos reservados.",
+            "© 2024 BookMyTourGuide. Todos los derechos reservados.",
           footer_legal_links:
             "Política de Privacidad | Términos de Servicio | Política de Cookies",
 
@@ -1160,7 +1160,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           footer_newsletter_prompt: "Recevez les dernières offres.",
           footer_email_placeholder: "Entrez votre e-mail",
           footer_subscribe: "S'abonner",
-          footer_copyright: "© 2024 WanderGuide. Tous droits réservés.",
+          footer_copyright: "© 2024 BookMyTourGuide. Tous droits réservés.",
           footer_legal_links:
             "Politique de Confidentialité | Conditions d'Utilisation",
 
@@ -1620,7 +1620,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           footer_newsletter_prompt: "Получайте последние предложения.",
           footer_email_placeholder: "Введите ваш e-mail",
           footer_subscribe: "Подписаться",
-          footer_copyright: "© 2024 WanderGuide. Все права защищены.",
+          footer_copyright: "© 2024 BookMyTourGuide. Все права защищены.",
           footer_legal_links:
             "Политика конфиденциальности | Условия обслуживания",
 
@@ -2027,7 +2027,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           app_step_2: "2. Dokumentenprüfung (2-3 Tage)",
           app_step_3: "3. Video-Interview",
           app_step_4: "4. Hintergrundüberprüfung",
-          app_step_5: "5. Willkommen bei WanderGuide!",
+          app_step_5: "5. Willkommen bei BookMyTourGuide!",
           booking_proc_title: "Einfacher Buchungsprozess",
           booking_proc_desc: "Buchen Sie Ihre perfekte Tour in wenigen Klicks.",
           step_1_title: "Erlebnis wählen",
@@ -2068,7 +2068,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           footer_newsletter_prompt: "Erhalten Sie die neuesten Angebote.",
           footer_email_placeholder: "Geben Sie Ihre E-Mail-Adresse ein",
           footer_subscribe: "Abonnieren",
-          footer_copyright: "© 2024 WanderGuide. Alle Rechte vorbehalten.",
+          footer_copyright: "© 2024 BookMyTourGuide. Alle Rechte vorbehalten.",
           footer_legal_links: "Datenschutz | Nutzungsbedingungen",
 
           help_center: "Hilfezentrum",

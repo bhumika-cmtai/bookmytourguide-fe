@@ -60,6 +60,7 @@ const adminNavigation = [
     href: "/dashboard/admin/custom-booking",
     icon: UserRoundPlus,
   },
+  { name: "Leads", href: "/dashboard/admin/leads", icon: FileText },
   {
     name: "Testimonials",
     href: "/dashboard/admin/testimonial",
