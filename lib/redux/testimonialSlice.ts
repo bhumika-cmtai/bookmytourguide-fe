@@ -5,7 +5,8 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 interface Testimonial {
   _id: string;
   name: string;
-  message: string;
+  message?: string;
+  country: string;
   rating?: number;
   video?: string;
   position?: string;
@@ -261,8 +262,8 @@ const testimonialsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Fetch Testimonials
-      .addCase(fetchTestimonials.pending, (state) => { 
-        state.loading = true; 
+      .addCase(fetchTestimonials.pending, (state) => {
+        state.loading = true;
       })
       .addCase(fetchTestimonials.fulfilled, (state, action) => {
         state.loading = false;
@@ -276,9 +277,9 @@ const testimonialsSlice = createSlice({
         state.error = action.payload as string;
       })
       // Create Testimonial
-      .addCase(createTestimonial.pending, (state) => { 
-        state.creating = true; 
-        state.error = null; 
+      .addCase(createTestimonial.pending, (state) => {
+        state.creating = true;
+        state.error = null;
       })
       .addCase(createTestimonial.fulfilled, (state, action) => {
         state.creating = false;
@@ -290,9 +291,9 @@ const testimonialsSlice = createSlice({
         state.error = action.payload as string;
       })
       // Update Testimonial
-      .addCase(updateTestimonial.pending, (state) => { 
-        state.updating = true; 
-        state.error = null; 
+      .addCase(updateTestimonial.pending, (state) => {
+        state.updating = true;
+        state.error = null;
       })
       .addCase(updateTestimonial.fulfilled, (state, action) => {
         state.updating = false;
@@ -306,9 +307,9 @@ const testimonialsSlice = createSlice({
         state.error = action.payload as string;
       })
       // Delete Testimonial
-      .addCase(deleteTestimonial.pending, (state) => { 
-        state.deleting = true; 
-        state.error = null; 
+      .addCase(deleteTestimonial.pending, (state) => {
+        state.deleting = true;
+        state.error = null;
       })
       .addCase(deleteTestimonial.fulfilled, (state, action) => {
         state.deleting = false;
@@ -320,9 +321,9 @@ const testimonialsSlice = createSlice({
         state.error = action.payload as string;
       })
       // Toggle Visibility
-      .addCase(toggleTestimonialVisibility.pending, (state) => { 
-        state.toggling = true; 
-        state.error = null; 
+      .addCase(toggleTestimonialVisibility.pending, (state) => {
+        state.toggling = true;
+        state.error = null;
       })
       .addCase(toggleTestimonialVisibility.fulfilled, (state, action) => {
         state.toggling = false;
@@ -342,5 +343,5 @@ export const { clearError, setCurrentPage } = testimonialsSlice.actions;
 export default testimonialsSlice.reducer;
 
 // --- SELECTORS ---
-export const selectAllTestimonials = (state: { testimonials: TestimonialsState }) => 
+export const selectAllTestimonials = (state: { testimonials: TestimonialsState }) =>
   state.testimonials;

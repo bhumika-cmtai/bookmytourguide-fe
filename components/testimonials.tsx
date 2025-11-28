@@ -16,11 +16,18 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader,
-  VolumeX, // Mute icon
-  Volume2, // Unmute icon
+  VolumeX,
+  Volume2,
 } from "lucide-react";
 import { staggerContainer, fadeInUp } from "@/lib/motion-variants";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+// --- Helper: Get Flag URL from Country Code ---
+// Uses flagcdn.com (e.g., 'IN' -> Indian Flag)
+const getFlagUrl = (countryCode: string) => {
+  if (!countryCode) return null;
+  return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`;
+};
 
 export function Testimonials() {
   const { t } = useLanguage();
@@ -28,23 +35,20 @@ export function Testimonials() {
   const { testimonials, loading, error, total } = useSelector(
     (state: RootState) => state.testimonials
   );
+
+  // Carousel Setup
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: "start",
     skipSnaps: false,
     dragFree: false,
   });
+
   const [prevBtnEnabled, setPrevBtnEnabled] = useState(false);
   const [nextBtnEnabled, setNextBtnEnabled] = useState(false);
 
-  const scrollPrev = useCallback(
-    () => emblaApi && emblaApi.scrollPrev(),
-    [emblaApi]
-  );
-  const scrollNext = useCallback(
-    () => emblaApi && emblaApi.scrollNext(),
-    [emblaApi]
-  );
+  const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
@@ -52,22 +56,24 @@ export function Testimonials() {
     setNextBtnEnabled(emblaApi.canScrollNext());
   }, [emblaApi]);
 
+  // Fetch Data
   useEffect(() => {
     dispatch(fetchTestimonials({ limit: 10, visible: true }));
   }, [dispatch]);
 
+  // Carousel Listeners
   useEffect(() => {
     if (!emblaApi) return;
     onSelect();
     emblaApi.on("select", onSelect);
     emblaApi.on("reInit", onSelect);
-
     return () => {
       emblaApi.off("select", onSelect);
       emblaApi.off("reInit", onSelect);
     };
   }, [emblaApi, onSelect]);
 
+  // Calculate Average Rating
   const averageRating =
     testimonials.length > 0
       ? (
@@ -85,6 +91,7 @@ export function Testimonials() {
           viewport={{ once: true }}
           variants={staggerContainer}
         >
+          {/* Header Section */}
           <motion.div variants={fadeInUp} className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               {t("testimonials_title_community")}
@@ -93,6 +100,8 @@ export function Testimonials() {
               {t("testimonials_desc")}
             </p>
           </motion.div>
+
+          {/* Carousel Section */}
           <motion.div variants={fadeInUp} className="relative">
             {loading && (
               <div className="flex justify-center items-center h-96">
@@ -130,6 +139,8 @@ export function Testimonials() {
                 </div>
               </div>
             )}
+
+            {/* Navigation Buttons */}
             {!loading && testimonials.length > 2 && (
               <>
                 <Button
@@ -137,7 +148,7 @@ export function Testimonials() {
                   disabled={!prevBtnEnabled}
                   variant="outline"
                   size="icon"
-                  className="absolute top-1/2 -left-4 md:-left-6 -translate-y-1/2 rounded-full w-12 h-12 shadow-lg z-10"
+                  className="absolute top-1/2 -left-4 md:-left-6 -translate-y-1/2 rounded-full w-12 h-12 shadow-lg z-10 bg-background"
                 >
                   <ArrowLeft className="w-6 h-6" />
                 </Button>
@@ -146,13 +157,15 @@ export function Testimonials() {
                   disabled={!nextBtnEnabled}
                   variant="outline"
                   size="icon"
-                  className="absolute top-1/2 -right-4 md:-right-6 -translate-y-1/2 rounded-full w-12 h-12 shadow-lg z-10"
+                  className="absolute top-1/2 -right-4 md:-right-6 -translate-y-1/2 rounded-full w-12 h-12 shadow-lg z-10 bg-background"
                 >
                   <ArrowRight className="w-6 h-6" />
                 </Button>
               </>
             )}
           </motion.div>
+
+          {/* Stats Section */}
           <motion.div
             variants={fadeInUp}
             className="mt-20 pt-16 border-t border-border"
@@ -170,6 +183,7 @@ export function Testimonials() {
   );
 }
 
+// --- Sub-Component: Stats Item ---
 const StatItem = ({ number, label }: { number: string; label: string }) => (
   <motion.div
     variants={fadeInUp}
@@ -183,6 +197,7 @@ const StatItem = ({ number, label }: { number: string; label: string }) => (
   </motion.div>
 );
 
+// --- Sub-Component: Video Slide ---
 const VideoSlide = memo(function VideoSlide({
   testimonial,
   t,
@@ -192,34 +207,26 @@ const VideoSlide = memo(function VideoSlide({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true); // New state for volume
+  const [isMuted, setIsMuted] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Function to toggle play/pause
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-
     if (video.paused) {
-      video.play().catch((err) => {
-        console.error("Video play failed:", err);
-        setHasError(true);
-      });
+      video.play().catch(() => setHasError(true));
     } else {
       video.pause();
     }
   }, []);
 
-  // New function to toggle mute/unmute
   const toggleMute = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent toggling play when clicking volume
+    e.stopPropagation();
     const video = videoRef.current;
     if (!video) return;
-
-    const newMutedState = !video.muted;
-    video.muted = newMutedState;
-    setIsMuted(newMutedState);
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
   }, []);
 
   useEffect(() => {
@@ -228,20 +235,12 @@ const VideoSlide = memo(function VideoSlide({
 
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
-    const onError = (e: Event) => {
-      console.error("Video error:", e);
-      setHasError(true);
-    };
+    const onError = () => setHasError(true);
     const onLoadedData = () => {
       setIsLoaded(true);
-      video.play().catch((err) => {
-        console.error("Autoplay failed:", err);
-      });
+      video.play().catch(() => { });
     };
-    // New listener for volume changes
-    const onVolumeChange = () => {
-      setIsMuted(video.muted);
-    };
+    const onVolumeChange = () => setIsMuted(video.muted);
 
     video.addEventListener("play", onPlay);
     video.addEventListener("pause", onPause);
@@ -249,14 +248,12 @@ const VideoSlide = memo(function VideoSlide({
     video.addEventListener("loadeddata", onLoadedData);
     video.addEventListener("volumechange", onVolumeChange);
 
-
     return () => {
       video.removeEventListener("play", onPlay);
       video.removeEventListener("pause", onPause);
       video.removeEventListener("error", onError);
       video.removeEventListener("loadeddata", onLoadedData);
       video.removeEventListener("volumechange", onVolumeChange);
-
     };
   }, []);
 
@@ -272,92 +269,130 @@ const VideoSlide = memo(function VideoSlide({
   }
 
   return (
-    <Card className="w-full aspect-video rounded-2xl overflow-hidden relative group">
+    <Card className="w-full aspect-video rounded-2xl overflow-hidden relative group shadow-md border-0">
       <video
         ref={videoRef}
         src={testimonial.video}
         autoPlay
         loop
-        muted // Initial state is muted
+        muted
         playsInline
-        preload="auto"
         className="w-full h-full object-cover"
         onClick={togglePlay}
       />
+
+      {/* Loading Spinner */}
       {!isLoaded && (
-        <div className="absolute inset-0 bg-black/90 flex items-center justify-center">
-          <Loader className="w-12 h-12 animate-spin text-white" />
+        <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+          <Loader className="w-10 h-10 animate-spin text-white" />
         </div>
       )}
 
-      {/* Play/Pause overlay */}
+      {/* Play/Pause Overlay */}
       <div
-        className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-300 cursor-pointer ${isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"
+        className={`absolute inset-0 bg-black/20 flex items-center justify-center transition-opacity duration-300 cursor-pointer ${isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"
           }`}
         onClick={togglePlay}
       >
         {!isPlaying && <Play className="w-16 h-16 text-white drop-shadow-lg" />}
       </div>
 
-      {/* New Volume Button */}
+      {/* Volume Button */}
       <Button
         size="icon"
         variant="ghost"
-        className="absolute top-4 right-4 z-20 bg-black/30 hover:bg-black/50 text-white rounded-full w-10 h-10"
+        className="absolute top-4 right-4 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full w-10 h-10"
         onClick={toggleMute}
       >
         {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
       </Button>
 
-      {/* Bottom info panel */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent text-white pointer-events-none">
-        <h4 className="font-bold text-lg">{testimonial.name}</h4>
-        {testimonial.position && (
-          <p className="text-sm opacity-80">{testimonial.position}</p>
-        )}
+      {/* Info Bar (Name + Flag + Position) */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent text-white pointer-events-none">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="font-bold text-lg flex items-center gap-2 drop-shadow-md">
+              {testimonial.name}
+              {/* Flag Display */}
+              {testimonial.country && (
+                <img
+                  src={getFlagUrl(testimonial.country)}
+                  alt={testimonial.country}
+                  className="w-6 h-auto rounded-sm shadow-sm"
+                  loading="lazy"
+                />
+              )}
+            </h4>
+            {testimonial.position && (
+              <p className="text-sm opacity-90 text-gray-200">{testimonial.position}</p>
+            )}
+          </div>
+          {/* Rating Stars in Overlay */}
+          <div className="flex gap-0.5">
+            {[...Array(testimonial.rating || 5)].map((_, i) => (
+              <Star key={i} className="w-3.5 h-3.5 text-yellow-400 fill-current drop-shadow-md" />
+            ))}
+          </div>
+        </div>
       </div>
     </Card>
   );
 });
 
-const TextSlide = memo(function TextSlide({
-  testimonial,
-}: {
-  testimonial: any;
-}) {
+// --- Sub-Component: Text Slide ---
+const TextSlide = memo(function TextSlide({ testimonial }: { testimonial: any }) {
   return (
-    <Card className="w-full h-full aspect-video rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm p-8 flex flex-col justify-between">
+    <Card className="w-full h-full min-h-[300px] rounded-2xl overflow-hidden bg-card border shadow-sm p-8 flex flex-col justify-between hover:shadow-md transition-shadow">
       <div>
-        <div className="flex justify-between items-start">
-          <Quote className="w-10 h-10 text-primary/50" />
+        <div className="flex justify-between items-start mb-4">
+          <Quote className="w-10 h-10 text-primary/20" />
           <div className="flex items-center gap-1">
             {[...Array(testimonial.rating || 5)].map((_, i) => (
               <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
             ))}
           </div>
         </div>
-        <p className="mt-4 text-lg text-foreground leading-relaxed line-clamp-6">
-          "{testimonial.message}"
-        </p>
+
+        {/* Message (Handle optional) */}
+        {testimonial.message ? (
+          <p className="text-lg text-foreground leading-relaxed line-clamp-6">
+            "{testimonial.message}"
+          </p>
+        ) : (
+          <p className="text-lg text-muted-foreground italic leading-relaxed">
+            (Video review provided)
+          </p>
+        )}
       </div>
-      <div className="flex items-center gap-4 mt-6">
+
+      <div className="flex items-center gap-4 mt-6 pt-4 border-t border-border/50">
         {testimonial.image ? (
           <img
             src={testimonial.image}
             alt={testimonial.name}
-            className="w-14 h-14 rounded-full object-cover border-2 border-primary/50"
+            className="w-12 h-12 rounded-full object-cover border border-border"
           />
         ) : (
-          <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
-            <User className="w-6 h-6 text-muted-foreground" />
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <User className="w-6 h-6 text-primary" />
           </div>
         )}
+
         <div>
-          <h4 className="font-bold text-foreground">{testimonial.name}</h4>
+          <h4 className="font-bold text-foreground flex items-center gap-2">
+            {testimonial.name}
+            {/* Flag Display */}
+            {testimonial.country && (
+              <img
+                src={getFlagUrl(testimonial.country)}
+                alt={testimonial.country}
+                className="w-10 h-auto rounded-sm shadow-sm"
+                loading="lazy"
+              />
+            )}
+          </h4>
           {testimonial.position && (
-            <p className="text-sm text-muted-foreground">
-              {testimonial.position}
-            </p>
+            <p className="text-sm text-muted-foreground">{testimonial.position}</p>
           )}
         </div>
       </div>

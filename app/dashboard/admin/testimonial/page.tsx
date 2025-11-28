@@ -23,10 +23,25 @@ import {
 } from "lucide-react";
 import { staggerContainer, fadeInUp } from "@/lib/motion-variants"; // Adjust path
 
+
+const COUNTRY_LIST = [
+  { code: "IN", name: "India" },
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "CA", name: "Canada" },
+  { code: "AU", name: "Australia" },
+  { code: "AE", name: "United Arab Emirates" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "JP", name: "Japan" },
+  // Add more as needed...
+];
+
 // Form data now uses 'video'
 interface TestimonialFormData {
   name: string;
   message: string;
+  country: string;
   rating: number;
   video: string; // This holds the existing video URL for display
   position: string;
@@ -51,12 +66,12 @@ export default function TestimonialsAdminPage() {
   const [visibilityFilter, setVisibilityFilter] = useState<boolean | undefined>(undefined);
   const [showForm, setShowForm] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState<any>(null);
-  
+
   // State to manage the actual video file for upload
   const [videoFile, setVideoFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState<TestimonialFormData>({
-    name: "", message: "", rating: 5, video: "", position: "", isVisible: true,
+    name: "", message: "", country: "IN", rating: 5, video: "", position: "", isVisible: true,
   });
 
   // Fetch testimonials when parameters change
@@ -75,20 +90,21 @@ export default function TestimonialsAdminPage() {
     const submissionData = new FormData();
     submissionData.append("name", formData.name);
     submissionData.append("message", formData.message);
+    submissionData.append("country", formData.country);
     submissionData.append("position", formData.position);
     submissionData.append("rating", String(formData.rating));
     submissionData.append("isVisible", String(formData.isVisible));
-    
+
     if (videoFile) {
       submissionData.append("video", videoFile);
     }
-    
+
     try {
       if (editingTestimonial) {
         await dispatch(
-          updateTestimonial({ 
-            id: editingTestimonial._id, 
-            testimonialData: submissionData 
+          updateTestimonial({
+            id: editingTestimonial._id,
+            testimonialData: submissionData
           })
         ).unwrap();
       } else {
@@ -122,6 +138,7 @@ export default function TestimonialsAdminPage() {
     setFormData({
       name: testimonial.name,
       message: testimonial.message,
+      country: testimonial.country || "IN",
       rating: testimonial.rating || 5,
       video: testimonial.video || "",
       position: testimonial.position || "",
@@ -132,7 +149,7 @@ export default function TestimonialsAdminPage() {
   };
 
   const resetForm = () => {
-    setFormData({ name: "", message: "", rating: 5, video: "", position: "", isVisible: true });
+    setFormData({ name: "", message: "", country: "IN", rating: 5, video: "", position: "", isVisible: true });
     setEditingTestimonial(null);
     setVideoFile(null);
     setShowForm(false);
@@ -152,7 +169,7 @@ export default function TestimonialsAdminPage() {
               <Plus size={20} /> Add New
             </motion.button>
           </motion.div>
-          
+
           {/* Testimonials Table */}
           <motion.div variants={fadeInUp} className="bg-white rounded-2xl border shadow-sm overflow-hidden">
             {isLoading ? <div className="p-8 text-center">Loading...</div> : (
@@ -184,9 +201,9 @@ export default function TestimonialsAdminPage() {
                         <td className="px-6 py-4 text-gray-600 text-sm max-w-sm truncate">{testimonial.message}</td>
                         <td className="px-6 py-4 text-center">{testimonial.rating || 'N/A'}</td>
                         <td className="px-6 py-4 text-center">
-                           <button onClick={() => handleToggleVisibility(testimonial._id, testimonial.isVisible)} className={`px-3 py-1 text-xs font-medium rounded-full ${testimonial.isVisible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                               {testimonial.isVisible ? 'Visible' : 'Hidden'}
-                           </button>
+                          <button onClick={() => handleToggleVisibility(testimonial._id, testimonial.isVisible)} className={`px-3 py-1 text-xs font-medium rounded-full ${testimonial.isVisible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {testimonial.isVisible ? 'Visible' : 'Hidden'}
+                          </button>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2">
@@ -212,24 +229,38 @@ export default function TestimonialsAdminPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Form fields: Name, Position, Message, Rating */}
               <div className="grid md:grid-cols-2 gap-6">
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                    <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"/>
-                 </div>
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
-                    <input type="text" value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} className="w-full px-4 py-2 border rounded-lg"/>
-                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                  <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
+                  <select
+                    value={formData.country}
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {COUNTRY_LIST.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                  <input type="text" value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })} className="w-full px-4 py-2 border rounded-lg" />
+                </div>
               </div>
               <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
-                  <textarea required rows={4} value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-2 border rounded-lg resize-vertical"/>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
+                <textarea rows={4} value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-2 border rounded-lg resize-vertical" />
               </div>
-              
+
               {/* Video File Input Section */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Video File</label>
-                
+
                 {/* --- START: NEW CODE TO SHOW EXISTING VIDEO --- */}
                 {editingTestimonial && formData.video && (
                   <div className="mb-4">
@@ -265,11 +296,11 @@ export default function TestimonialsAdminPage() {
                     <p className="truncate">
                       {videoFile ? `New file: ${videoFile.name}` : `Existing file: ${formData.video.split('/').pop()}`}
                     </p>
-                    <button type="button" onClick={() => { setVideoFile(null); setFormData(f => ({...f, video: ''})); }} className="text-red-500 hover:text-red-700 ml-3"><X size={18} /></button>
+                    <button type="button" onClick={() => { setVideoFile(null); setFormData(f => ({ ...f, video: '' })); }} className="text-red-500 hover:text-red-700 ml-3"><X size={18} /></button>
                   </div>
                 )}
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <button type="submit" disabled={creating || updating} className="bg-blue-600 text-white py-2.5 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-300">
                   {creating || updating ? "Saving..." : editingTestimonial ? "Update" : "Create"}
